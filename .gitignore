@@ -1,0 +1,10 @@
+data/
+output/
+.Rhistory
+.RData
+.Rproj.user/
+*.png
+*.jpeg
+*.tif
+*.tiff
+*.nc
