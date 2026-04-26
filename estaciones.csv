@@ -1,0 +1,14 @@
+﻿id,nombre,x,y,proveedor,archivo,vars
+VR,SMN_VillaReynolds,-65.378056,-33.725278,SMN,SMN_VillaReynolds.csv,pp
+SL,SMN_SanLuis,-66.351111,-33.275,SMN,SMN_SanLuis.csv,pp
+SR,SMN_SantaRosa,-65.185833,-32.384445,SMN,SMN_SantaRosa.csv,pp
+TL,INTA_Tilisarao,-65.23332977,-32.66666794,INTA,INTA_Tilisarao.csv,pp
+VM,INTA_VillaMercedes,-65.40795135,-33.66476822,INTA,INTA_VillaMercedes.csv,pp;et
+OX1,OMIXOM_SanPedro,-65.2188,-31.9253,OMIXOM,SanPedro.xlsx,pp;et
+OX2,OMIXOM_RodeoCaballos,-64.7911,-32.4825,OMIXOM,RodeoCaballos.xlsx,pp;et
+OX3,OMIXOM_VillaDolores,-65.1941,-31.954,OMIXOM,VillaDolores.xlsx,pp;et
+OX4,OMIXOM_LaPaz,-65.0706,-32.2136,OMIXOM,LaPaz.xlsx,pp;et
+OX5,OMIXOM_CuencaLetanias,-64.8555,-32.3602,OMIXOM,CuencaLetanias.xlsx,pp;et
+OX6,OMIXOM_PresaChañar,-65.055111,-33.960833,OMIXOM,PresaChanar.xlsx,pp;et
+OX7,OMIXOM_Chajan,-65.005854,-33.550782,OMIXOM,Chajan.xlsx,pp;et
+OX8,OMIXOM_EstanciaNoble,-65.054332,-32.099383,OMIXOM,EstanciaNoble.xlsx,pp;et
