@@ -65,6 +65,48 @@ applyBEAST <- function(y, umbral_cp = 0.5, umbral_tend_cero = 0.05, max_cp = 3) 
     tend_cp3_fecha = cp_tend_fecha[3], tend_cp3_prob = cp_tend_prob[3],
     seas_cp1_fecha = cp_seas_fecha[1], seas_cp1_prob = cp_seas_prob[1],
     seas_cp2_fecha = cp_seas_fecha[2], seas_cp2_prob = cp_seas_prob[2],
-    seas_cp3_fecha = cp_seas_fecha[3], seas_cp3_prob = cp_seas_prob[3]
+    seas_cp3_fecha = cp_seas_fecha[3], seas_cp3_prob = cp_seas_prob[3],
+    tend_ncp = length(cp_tend_validos),
+    seas_ncp = length(cp_seas_validos)
   )
 }
+
+# ── GRAFICAR EN PIXELES PARTICULARES ────────────────────────────────────────────────────
+
+
+graficarBEAST <- function(coord_x, coord_y, variable, nombre_carpeta, 
+                          espesor_cm = NULL) {
+  
+  datos  <- importData(nombre_carpeta)
+  datos  <- as.data.frame(datos)
+  
+  fila <- datos %>%
+    filter(abs(x - coord_x) < 0.05, abs(y - coord_y) < 0.05) %>%
+    select(-x, -y)
+  
+  y      <- as.numeric(fila)
+  fechas <- as.Date(colnames(fila))
+  
+  if (variable %in% c("pp", "et")) {
+    y <- convertir_unidades(y, variable = variable, fechas = fechas)
+  }
+  
+  o <- beast(y,
+             start   = 1982,
+             deltat  = 1/12,
+             season  = "harmonic",
+             period  = 12,
+             quiet   = TRUE)
+  
+  plot(o)
+}
+
+
+# USO DESDE CONSOLA: 
+
+#source("R/importData.R")
+#source("R/convertirUnidades.R")
+#source("R/applyBEAST.R")
+#graficarBEAST(coord_x = -65.37, coord_y = -33.75,
+#              variable = "pp",
+#              nombre_carpeta = "FLDAS_Rainf_f_tavg_comp")
