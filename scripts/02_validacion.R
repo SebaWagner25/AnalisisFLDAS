@@ -1,14 +1,13 @@
 library(tidyverse)
 library(readxl)
 library(robustbase)
+library(terra)
 
 source("R/importData.R")
 source("R/datosPixel.R")
 source("R/convertirUnidades.R")
-source("R/datosCampo_CSV.R")
+source("R/datosCampo.R")
 source("R/datosOMIXOM.R")
-
-# ─── CONFIGURACIÓN DE ESTACIONES ────────────────────────────────────────────
 
 # ─── CONFIGURACIÓN DE ESTACIONES ────────────────────────────────────────────
 
@@ -20,7 +19,11 @@ estaciones <- split(estaciones_df, seq(nrow(estaciones_df))) %>%
       id       = fila$id,
       nombre   = fila$nombre,
       proveedor = fila$proveedor,
-      archivo  = file.path("data", fila$archivo),
+      archivo = file.path("data", 
+                          ifelse(fila$proveedor == "OMIXOM", 
+                                 "DATOS_OMIXOM", 
+                                 "DATOS_INTA_SMN"), 
+                          fila$archivo),
       x        = fila$x,
       y        = fila$y,
       vars     = strsplit(fila$vars, ";")[[1]]
@@ -41,9 +44,9 @@ cargar_campo <- function(estacion, variable) {
     datosOMIXOM(estacion$archivo, variable = var_omixom)
   } else {
     nombre_col <- ifelse(variable == "pp", "PP", "ET")
-    datosCampo_CSV(estacion$archivo, 
-                   nombre_variable = nombre_col,
-                   proveedor = estacion$proveedor)
+    datosCampo(estacion$archivo, 
+               nombre_variable = nombre_col,
+               proveedor = estacion$proveedor)
   }
 }
 
@@ -74,7 +77,9 @@ analizar <- function(datos, estacion, variable) {
     ke_pvalor  = ke$p.value,
     pendiente  = coef(lmrob_fit)[2],
     intercepto = coef(lmrob_fit)[1],
-    r2_adj     = sum_lmrob$adj.r.squared
+    r2_adj     = sum_lmrob$adj.r.squared,
+    bias = mean(datos$valor_fldas - datos$valor_campo, na.rm = TRUE),
+    rmse = sqrt(mean((datos$valor_fldas - datos$valor_campo)^2, na.rm = TRUE))
   )
 }
 
@@ -126,6 +131,7 @@ for (est in estaciones) {
                                 nombre_carpeta = carpetas_fldas[[var]])
       
       datos <- merge(datos_campo, datos_fldas, by = "fecha", all = FALSE)
+      cat("  Filas después del merge:", nrow(datos), "\n")
       datos$fecha <- NULL
       
       # Analizar
@@ -147,7 +153,7 @@ for (est in estaciones) {
 
 tabla <- bind_rows(resultados) %>%
   select(estacion, variable, n, spearman, sp_pvalor, kendall, ke_pvalor,
-         pendiente, r2_adj) %>%
+         pendiente, r2_adj, bias, rmse) %>%
   rename(
     "Estación"          = estacion,
     "Variable"          = variable,
@@ -157,7 +163,9 @@ tabla <- bind_rows(resultados) %>%
     "τ Kendall"         = kendall,
     "p-valor (Ke)"      = ke_pvalor,
     "Pendiente"         = pendiente,
-    "R² ajustado"       = r2_adj
+    "R² ajustado"       = r2_adj,
+    "BIAS"              = bias,
+    "RMSE"              = rmse
   )
 
 print(tabla)
