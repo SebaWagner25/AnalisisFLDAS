@@ -11,6 +11,8 @@ import xarray as xr
 import rioxarray
 import pandas as pd
 from glob import glob
+import sys
+
 
 # --- CONFIGURACIÓN DE VARIABLES ---
 VARIABLES = {
@@ -47,9 +49,10 @@ parser.add_argument("--variable", required=True, choices=VARIABLES.keys(),
 args = parser.parse_args()
 
 # --- RUTAS ---
-config        = VARIABLES[args.variable]
-carpeta_entrada = os.path.join("data", config["carpeta"])
-carpeta_salida  = os.path.join("data", "nc", args.variable)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+config          = VARIABLES[args.variable]
+carpeta_entrada = os.path.join(ROOT, "data", config["carpeta"])
+carpeta_salida  = os.path.join(ROOT, "data", "nc", args.variable)
 nombre_nc       = config["nombre_nc"]
 archivo_salida  = os.path.join(carpeta_salida, f"{nombre_nc}.nc")
 
