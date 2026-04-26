@@ -32,6 +32,7 @@ pip install xarray rioxarray pandas numpy netcdf4
 ## Datos usados
 
 - Archivos `.tif` de FLDAS organizados en carpetas por variable dentro de `data/`
+
 | Carpeta | Variable |
 |---------|----------|
 | `FLDAS_Rainf_f_tavg_comp` | Precipitación |
@@ -40,6 +41,7 @@ pip install xarray rioxarray pandas numpy netcdf4
 | `FLDAS_SoilMoi10_40cm_tavg_comp` | Humedad de suelo 10-40 cm |
 | `FLDAS_SoilMoi40_100cm_tavg_comp` | Humedad de suelo 40-100 cm |
 | `FLDAS_SoilMoi100_200cm_tavg_comp` | Humedad de suelo 100-200 cm |
+
 - Datos de campo de las estaciones listadas en `estaciones.csv`
 
 ## Uso
