@@ -2,7 +2,7 @@
 
 importData <- function(nombre_carpeta){
   # Listo los nombres de los archivos de la carpeta
-  archivos <- list.files(path = paste0("data/raw_data/", nombre_carpeta), 
+  archivos <- list.files(path = paste0("data/", nombre_carpeta), 
                          pattern = "\\.tif[f]?$", full.names = TRUE)
   # Extraigo la fecha de cada uno
   fecha <- str_extract(basename(archivos), "\\d{6}")

@@ -3,9 +3,9 @@ datosPixel <- function(coord_x, coord_y, variable, nombre_carpeta, espesor_cm = 
   datos <- as.data.frame(datos)
   
   fila <- datos %>%
-    filter(abs(x - coord_x) < 0.01, abs(y - coord_y) < 0.01) %>% 
+    filter(abs(x - coord_x) < 0.05, abs(y - coord_y) < 0.05) %>% 
     select(-x, -y)
-  
+
   patron <- "valor_"
   nombre_columna <- paste0(patron, "fldas")
   
