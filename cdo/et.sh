@@ -25,4 +25,7 @@ cdo timmean -select,season=MAM $VAR/et_estacional.nc $VAR/et_otonio.nc
 cdo timmean -select,season=JJA $VAR/et_estacional.nc $VAR/et_invierno.nc
 cdo timmean -select,season=SON $VAR/et_estacional.nc $VAR/et_primavera.nc
 
+# Eliminar archivos intermedios
+rm $VAR/et_coords.nc $VAR/et_filtrado.nc $VAR/et_estacional.nc
+
 echo "Listo. Archivos generados en $VAR"
