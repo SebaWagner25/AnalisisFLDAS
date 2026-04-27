@@ -18,10 +18,10 @@ VAR="data/nc/$CAPA"
 cdo chname,x,lon,y,lat $VAR/humedad_suelo_${CAPA#hs_}.nc $VAR/${CAPA}_coords.nc
 
 # 2. Eliminar estaciones incompletas
-cdo seldate,1982-03-01,2024-11-30 $VAR/${CAPA}_coords.nc $VAR/${CAPA}_filtrado.nc
+cdo seldate,1982-03-01,2024-11-01 $VAR/${CAPA}_coords.nc $VAR/${CAPA}_filtrado.nc
 
 # 3. Media anual
-cdo yearmean $VAR/${CAPA}_filtrado.nc $VAR/${CAPA}_anual.nc
+cdo yearmean $VAR/${CAPA}_coords.nc $VAR/${CAPA}_anual.nc
 
 # 4. Media estacional por año
 cdo seasmean $VAR/${CAPA}_filtrado.nc $VAR/${CAPA}_estacional.nc

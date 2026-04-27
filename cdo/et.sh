@@ -14,7 +14,7 @@ cdo mulc,86400 -muldpm $VAR/et_coords.nc $VAR/et_mm.nc
 cdo seldate,1982-03-01,2024-11-30 $VAR/et_mm.nc $VAR/et_filtrado.nc
 
 # 4. Media anual
-cdo yearmean $VAR/et_filtrado.nc $VAR/et_anual.nc
+cdo yearmean $VAR/et_mm.nc $VAR/et_anual.nc
 
 # 5. Media estacional por año
 cdo seasmean $VAR/et_filtrado.nc $VAR/et_estacional.nc
