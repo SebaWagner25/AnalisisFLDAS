@@ -11,10 +11,10 @@ cdo chname,x,lon,y,lat $VAR/precipitacion.nc $VAR/pp_coords.nc
 cdo mulc,86400 -muldpm $VAR/pp_coords.nc $VAR/pp_mm.nc
 
 # 3. Eliminar estaciones incompletas
-cdo seldate,1982-03-01,2024-11-30 $VAR/pp_mm.nc $VAR/pp_filtrado.nc
+cdo seldate,1982-03-01,2024-11-01 $VAR/pp_mm.nc $VAR/pp_filtrado.nc
 
 # 4. Acumulado anual
-cdo yearsum $VAR/pp_filtrado.nc $VAR/pp_anual.nc
+cdo yearsum $VAR/pp_mm.nc $VAR/pp_anual.nc
 
 # 5. Acumulado estacional por año
 cdo seassum $VAR/pp_filtrado.nc $VAR/pp_estacional.nc
