@@ -1,5 +1,5 @@
 convertir_unidades <- function(valores, variable, fechas, espesor_cm = NULL){
-  
+
   if (variable %in% c("pp", "et")) {
     dias_mes <- days_in_month(fechas)
     segundos_mes <- dias_mes * 86400
@@ -15,7 +15,11 @@ convertir_unidades <- function(valores, variable, fechas, espesor_cm = NULL){
     }
     espesor_mm <- espesor_cm * 10
     return(valores * espesor_mm)
+  }
+  else if (variable == "t"){
+    # Temperatura del aire: Kelvin → °C
+    return(valores - 273.15)
   } else {
-    stop("La variable debe ser 'pp', 'et' o 'hs'.")
+    stop("La variable debe ser 'pp', 'et', 't' o 'hs'.")
   }
   }

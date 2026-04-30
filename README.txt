@@ -8,6 +8,7 @@ Estimator of Abrupt change, Seasonality, and Trend) para detectar cambios y tend
 **Variables analizadas:**
 - Precipitación (PP)
 - Evapotranspiración (ET)
+- Temperatura del aire cerca de la superficie (T)
 - Humedad de suelo (0-10, 10-40, 40-100 y 100-200 cm)
 
 **Período:** 1982-2024  
@@ -37,6 +38,7 @@ pip install xarray rioxarray pandas numpy netcdf4
 |---------|----------|
 | `FLDAS_Rainf_f_tavg_comp` | Precipitación |
 | `FLDAS_Evap_tavg_comp` | Evapotranspiración |
+| `FLDAS_Tair_f_tavg_comp` | Temperatura del aire cerca de la superficie |
 | `FLDAS_SoilMoi00_10cm_tavg_comp` | Humedad de suelo 0-10 cm |
 | `FLDAS_SoilMoi10_40cm_tavg_comp` | Humedad de suelo 10-40 cm |
 | `FLDAS_SoilMoi40_100cm_tavg_comp` | Humedad de suelo 40-100 cm |
@@ -51,6 +53,7 @@ pip install xarray rioxarray pandas numpy netcdf4
 ```bash
 python python/tiff_a_cdf.py --variable pp
 python python/tiff_a_cdf.py --variable et
+python python/tiff_a_cdf.py --variable t
 python python/tiff_a_cdf.py --variable hs_0_10
 python python/tiff_a_cdf.py --variable hs_10_40
 python python/tiff_a_cdf.py --variable hs_40_100
@@ -61,6 +64,7 @@ python python/tiff_a_cdf.py --variable hs_100_200
 ```bash
 bash cdo/pp.sh
 bash cdo/et.sh
+bash cdo/t.sh
 bash cdo/hs.sh hs_0_10
 bash cdo/hs.sh hs_10_40
 bash cdo/hs.sh hs_40_100

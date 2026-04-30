@@ -2,7 +2,7 @@
 """
 Convierte archivos .tif de FLDAS a formato NetCDF (.nc)
 Uso: python tiff_a_cdf.py --variable pp
-Variables disponibles: pp, et, hs_0_10, hs_10_40, hs_40_100, hs_100_200
+Variables disponibles: pp, et, t, hs_0_10, hs_10_40, hs_40_100, hs_100_200
 """
 
 import os
@@ -23,6 +23,10 @@ VARIABLES = {
     "et": {
         "carpeta":  "FLDAS_Evap_tavg_comp",
         "nombre_nc": "evapotranspiracion"
+    },
+    "t": {
+        "carpeta":  "FLDAS_Tair_f_tavg_comp",
+        "nombre_nc": "temperatura"
     },
     "hs_0_10": {
         "carpeta":  "FLDAS_SoilMoi00_10cm_tavg_comp",
@@ -45,7 +49,7 @@ VARIABLES = {
 # --- ARGUMENTOS ---
 parser = argparse.ArgumentParser(description="Convierte .tif de FLDAS a .nc")
 parser.add_argument("--variable", required=True, choices=VARIABLES.keys(),
-                    help="Variable a procesar: pp, et, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
+                    help="Variable a procesar: pp, et, t, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
 args = parser.parse_args()
 
 # --- RUTAS ---
@@ -60,8 +64,8 @@ os.makedirs(carpeta_salida, exist_ok=True)
 
 # --- LISTAR ARCHIVOS ---
 archivos_crudos = sorted(glob(os.path.join(carpeta_entrada, "*.tif*")))
-archivos_tif = [f for f in archivos_crudos 
-                if not f.endswith('.xml') and not f.endswith('.ovr')]
+archivos_tif = [f for f in archivos_crudos
+                if not f.endswith(".xml") and not f.endswith(".ovr")]
 
 if not archivos_tif:
     print(f"Error: No se encontraron archivos .tif en {carpeta_entrada}")
@@ -82,8 +86,8 @@ for i, archivo in enumerate(archivos_tif):
         ds = rioxarray.open_rasterio(archivo, masked=True, decode_times=False)
         ds = ds.squeeze(drop=True)
 
-        if 'time' in ds.coords or 'time' in ds.dims:
-            ds = ds.drop_vars('time', errors='ignore').drop_dims('time', errors='ignore')
+        if "time" in ds.coords or "time" in ds.dims:
+            ds = ds.drop_vars("time", errors="ignore").drop_dims("time", errors="ignore")
 
         ds.name = nombre_nc
         ds = ds.expand_dims(time=[fechas[i]])
@@ -103,7 +107,7 @@ else:
     try:
         ds_combinado = xr.concat(datasets, dim="time")
         encoding = {nombre_nc: {"zlib": True, "complevel": 5}}
-        ds_combinado.to_netcdf(archivo_salida, encoding=encoding, engine='netcdf4')
+        ds_combinado.to_netcdf(archivo_salida, encoding=encoding, engine="netcdf4")
         print(f"Guardado en: {archivo_salida}")
     except Exception as e:
         print(f"Error al guardar: {e}")

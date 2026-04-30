@@ -9,6 +9,7 @@ source("R/convertirUnidades.R")
 variables <- list(
   pp         = "FLDAS_Rainf_f_tavg_comp",
   et         = "FLDAS_Evap_tavg_comp",
+  t          = "FLDAS_Tair_f_tavg_comp",
   hs_0_10    = "FLDAS_SoilMoi00_10cm_tavg_comp",
   hs_10_40   = "FLDAS_SoilMoi10_40cm_tavg_comp",
   hs_40_100  = "FLDAS_SoilMoi40_100cm_tavg_comp",
@@ -24,14 +25,20 @@ espesores <- list(
 
 combinaciones <- list(
   c("pp",        "et"),
+  c("pp",        "t"),
   c("pp",        "hs_0_10"),
   c("pp",        "hs_10_40"),
   c("pp",        "hs_40_100"),
   c("pp",        "hs_100_200"),
+  c("et",        "t"),
   c("et",        "hs_0_10"),
   c("et",        "hs_10_40"),
   c("et",        "hs_40_100"),
   c("et",        "hs_100_200"),
+  c("t",         "hs_0_10"),
+  c("t",         "hs_10_40"),
+  c("t",         "hs_40_100"),
+  c("t",         "hs_100_200"),
   c("hs_0_10",   "hs_10_40"),
   c("hs_0_10",   "hs_40_100"),
   c("hs_0_10",   "hs_100_200"),
@@ -69,7 +76,7 @@ for (nombre in names(variables)) {
     y <- as.numeric(fila)
     
     # Convertir unidades
-    if (nombre %in% c("pp", "et")) {
+    if (nombre %in% c("pp", "et", "t")) {
       y <- convertir_unidades(y, variable = nombre, fechas = fechas)
     } else {
       y <- convertir_unidades(y, variable = "hs", fechas = fechas,

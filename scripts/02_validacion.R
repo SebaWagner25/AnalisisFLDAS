@@ -32,19 +32,44 @@ estaciones <- split(estaciones_df, seq(nrow(estaciones_df))) %>%
 
 carpetas_fldas <- list(
   pp = "FLDAS_Rainf_f_tavg_comp",
-  et = "FLDAS_Evap_tavg_comp"
+  et = "FLDAS_Evap_tavg_comp",
+  t  = "FLDAS_Tair_f_tavg_comp"
+)
+
+# Unidades por variable (para etiquetas de gráficos)
+unidades_var <- list(
+  pp = "mm/mes",
+  et = "mm/mes",
+  t  = "°C"
 )
 
 # ─── FUNCIONES AUXILIARES ───────────────────────────────────────────────────
 
 cargar_campo <- function(estacion, variable) {
-  var_omixom <- ifelse(variable == "pp", "Precipitación", "Evapotranspiración")
-  
+  # Mapeo de clave corta → nombre de variable en archivos OMIXOM
+  var_omixom_map <- list(
+    pp = "Precipitación",
+    et = "Evapotranspiración",
+    t  = "Temperatura"
+  )
+  # Mapeo de clave corta → nombre de columna en CSV INTA/SMN
+  var_campo_map <- list(
+    pp = "PP",
+    et = "ET",
+    t  = "T"
+  )
+
+  var_omixom <- var_omixom_map[[variable]]
+  nombre_col <- var_campo_map[[variable]]
+
+  if (is.null(var_omixom) || is.null(nombre_col)) {
+    stop("Variable no soportada en cargar_campo(): ", variable)
+  }
+
   if (estacion$proveedor == "OMIXOM") {
     datosOMIXOM(estacion$archivo, variable = var_omixom)
   } else {
-    nombre_col <- ifelse(variable == "pp", "PP", "ET")
-    datosCampo(estacion$archivo, 
+    datosCampo(estacion$archivo,
                nombre_variable = nombre_col,
                proveedor = estacion$proveedor)
   }
@@ -84,9 +109,12 @@ analizar <- function(datos, estacion, variable) {
 }
 
 graficar <- function(datos, estacion, variable, lmrob_fit) {
-  
+
   lim <- range(c(datos$valor_campo, datos$valor_fldas), na.rm = TRUE)
-  
+
+  unidad <- unidades_var[[variable]]
+  if (is.null(unidad)) unidad <- ""
+
   p <- ggplot(datos, aes(x = valor_fldas, y = valor_campo)) +
     geom_point(size = 1.2, color = "#1B2A49") +
     geom_abline(slope = 1, intercept = 0, linetype = "dotted", color = "gray40") +
@@ -95,8 +123,8 @@ graficar <- function(datos, estacion, variable, lmrob_fit) {
     coord_fixed(ratio = 1, xlim = lim, ylim = lim) +
     labs(
       title    = paste(estacion$nombre, "-", toupper(variable)),
-      x        = "FLDAS (mm/mes)",
-      y        = "Campo (mm/mes)",
+      x        = paste0("FLDAS (", unidad, ")"),
+      y        = paste0("Campo (", unidad, ")"),
       caption  = paste0("n = ", nrow(datos))
     ) +
     theme_light(base_size = 13) +
