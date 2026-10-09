@@ -47,7 +47,7 @@ combinaciones <- list(
   c("hs_40_100", "hs_100_200")
 )
 
-estaciones_df <- read.csv("estaciones.csv", stringsAsFactors = FALSE)
+estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE)
 dir.create("output/correlaciones", recursive = TRUE, showWarnings = FALSE)
 
 # ── CARGAR CADA VARIABLE Y EXTRAER PÍXELES DE ESTACIONES ────────────────────

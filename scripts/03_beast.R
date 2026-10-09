@@ -83,7 +83,7 @@ carpetas_fldas <- list(
   hs_100_200= "FLDAS_SoilMoi100_200cm_tavg_comp"
 )
 
-estaciones_df <- read.csv("estaciones.csv", stringsAsFactors = FALSE)
+estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE)
 estaciones    <- split(estaciones_df, seq(nrow(estaciones_df))) %>%
   map(function(fila) list(
     id        = fila$id,

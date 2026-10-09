@@ -44,7 +44,7 @@ pip install xarray rioxarray pandas numpy netcdf4
 | `FLDAS_SoilMoi40_100cm_tavg_comp` | Humedad de suelo 40-100 cm |
 | `FLDAS_SoilMoi100_200cm_tavg_comp` | Humedad de suelo 100-200 cm |
 
-- Datos de campo de las estaciones listadas en `estaciones.csv`
+- Datos de campo de las estaciones listadas en `data/estaciones.csv`
 
 ## Uso
 

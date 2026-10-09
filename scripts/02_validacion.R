@@ -11,7 +11,7 @@ source("R/datosOMIXOM.R")
 
 # ─── CONFIGURACIÓN DE ESTACIONES ────────────────────────────────────────────
 
-estaciones_df <- read.csv("estaciones.csv", stringsAsFactors = FALSE)
+estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE)
 
 estaciones <- split(estaciones_df, seq(nrow(estaciones_df))) %>%
   map(function(fila) {
