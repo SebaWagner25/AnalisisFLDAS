@@ -1,22 +1,25 @@
+# PASO 6 - BEAST (tendencias y cambios abruptos)
+# NOTA: este paso probablemente pase a otro proyecto/repositorio.
+# Aplica BEAST píxel por píxel a cada variable FLDAS y guarda un .tif con
+# la pendiente de la tendencia, su probabilidad de ser cero (tend_pvalor) y
+# los 3 cambios más probables en tendencia y estacionalidad.
+# Después grafica BEAST en el píxel de cada estación.
+# Salidas en output/beast/
+
 library(Rbeast)
 library(terra)
 library(tidyverse)
 library(parallel)
 n_cores <- detectCores() - 1
 
+source("R/config.R")
 source("R/importData.R")
 source("R/convertirUnidades.R")
-source("R/applyBEAST.R")
+source("R/datosPixel.R")
+source("R/applyBeast.R")
 
-variables <- list(
-  list(nombre = "pp",        carpeta = "FLDAS_Rainf_f_tavg_comp"),
-  list(nombre = "et",        carpeta = "FLDAS_Evap_tavg_comp"),
-  list(nombre = "t",         carpeta = "FLDAS_Tair_f_tavg_comp"),
-  list(nombre = "hs_0_10",   carpeta = "FLDAS_SoilMoi00_10cm_tavg_comp"),
-  list(nombre = "hs_10_40",  carpeta = "FLDAS_SoilMoi10_40cm_tavg_comp"),
-  list(nombre = "hs_40_100", carpeta = "FLDAS_SoilMoi40_100cm_tavg_comp"),
-  list(nombre = "hs_100_200",carpeta = "FLDAS_SoilMoi100_200cm_tavg_comp")
-)
+variables <- lapply(names(CARPETAS_FLDAS), function(v)
+  list(nombre = v, carpeta = CARPETAS_FLDAS[[v]]))
 
 dir.create("output/beast", recursive = TRUE, showWarnings = FALSE)
 
@@ -73,25 +76,8 @@ for (var in variables) {
 
 # ── GRÁFICOS DE PÍXELES CON ESTACIONES ──────────────────────────────────────
 
-carpetas_fldas <- list(
-  pp        = "FLDAS_Rainf_f_tavg_comp",
-  et        = "FLDAS_Evap_tavg_comp",
-  t         = "FLDAS_Tair_f_tavg_comp",
-  hs_0_10   = "FLDAS_SoilMoi00_10cm_tavg_comp",
-  hs_10_40  = "FLDAS_SoilMoi10_40cm_tavg_comp",
-  hs_40_100 = "FLDAS_SoilMoi40_100cm_tavg_comp",
-  hs_100_200= "FLDAS_SoilMoi100_200cm_tavg_comp"
-)
-
-estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE)
-estaciones    <- split(estaciones_df, seq(nrow(estaciones_df))) %>%
-  map(function(fila) list(
-    id        = fila$id,
-    nombre    = fila$nombre,
-    x         = fila$x,
-    y         = fila$y,
-    vars      = strsplit(as.character(fila$vars), ";")[[1]]
-  ))
+carpetas_fldas <- CARPETAS_FLDAS
+estaciones     <- cargarEstaciones()
 
 dir.create("output/beast/estaciones", recursive = TRUE, showWarnings = FALSE)
 

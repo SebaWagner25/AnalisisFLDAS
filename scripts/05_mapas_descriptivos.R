@@ -1,21 +1,27 @@
+# PASO 5 - MAPAS DESCRIPTIVOS (rasters para graficar)
+# Para cada variable FLDAS calcula, píxel por píxel, estadísticos de toda la
+# serie y los guarda como .tif multibanda (una banda por estadístico).
+# Estos .tif son la entrada de los mapas (el código de gráficos en Python
+# se agregará en python/). Las isolíneas se generan aparte con cdo/*.sh.
+# Salidas en output/mapas/:
+#   mensual/<var>_mensual_descriptivo.tif  media, desvío, mín, máx y fecha (AAAAMM) de mín y máx
+#   mensual/<var>_climatologia.tif         media de cada mes del año (12 bandas)
+#   anual/<var>_anual_descriptivo.tif      lo mismo con valores anuales
+# Unidades: PP y ET en mm/mes (anual: PP en mm/año, ET promedio mensual), T en °C,
+#           humedad de suelo sin convertir (m³/m³, como viene en FLDAS).
+
 library(terra)
 library(tidyverse)
 
+source("R/config.R")
 source("R/importData.R")
 source("R/convertirUnidades.R")
 
-variables <- list(
-  list(nombre = "pp",       carpeta = "FLDAS_Rainf_f_tavg_comp"),
-  list(nombre = "et",       carpeta = "FLDAS_Evap_tavg_comp"),
-  list(nombre = "t",        carpeta = "FLDAS_Tair_f_tavg_comp"),
-  list(nombre = "hs_0_10",  carpeta = "FLDAS_SoilMoi00_10cm_tavg_comp"),
-  list(nombre = "hs_10_40", carpeta = "FLDAS_SoilMoi10_40cm_tavg_comp"),
-  list(nombre = "hs_40_100",carpeta = "FLDAS_SoilMoi40_100cm_tavg_comp"),
-  list(nombre = "hs_100_200",carpeta = "FLDAS_SoilMoi100_200cm_tavg_comp")
-)
+variables <- lapply(names(CARPETAS_FLDAS), function(v)
+  list(nombre = v, carpeta = CARPETAS_FLDAS[[v]]))
 
-dir.create("output/descriptivo/mensual", recursive = TRUE, showWarnings = FALSE)
-dir.create("output/descriptivo/anual",   recursive = TRUE, showWarnings = FALSE)
+dir.create("output/mapas/mensual", recursive = TRUE, showWarnings = FALSE)
+dir.create("output/mapas/anual",   recursive = TRUE, showWarnings = FALSE)
 
 for (var in variables) {
   cat("Procesando:", var$nombre, "\n")
@@ -49,14 +55,14 @@ for (var in variables) {
                            fecha_min_num, fecha_max_num)
   r_mensual  <- rast(df_mensual, crs = "EPSG:4326")
   writeRaster(r_mensual, 
-              paste0("output/descriptivo/mensual/", var$nombre, "_mensual_descriptivo.tif"),
+              paste0("output/mapas/mensual/", var$nombre, "_mensual_descriptivo.tif"),
               overwrite = TRUE)
   
   # ── ANUAL ─────────────────────────────────────────────────────────
   fechas_col <- as.Date(colnames(valores))
   anios      <- format(fechas_col, "%Y")
   
-  # Agregar por año según la variable
+  # Agregar por año: suma para PP (mm/año), promedio para el resto
   valores_anuales <- sapply(unique(anios), function(a) {
     cols <- valores[, anios == a, drop = FALSE]
     if (var$nombre == "pp") {
@@ -105,7 +111,7 @@ for (var in variables) {
 
   r_anual  <- rast(df_anual, crs = "EPSG:4326")
   writeRaster(r_anual,
-              paste0("output/descriptivo/anual/", var$nombre, "_anual_descriptivo.tif"),
+              paste0("output/mapas/anual/", var$nombre, "_anual_descriptivo.tif"),
               overwrite = TRUE)
 
   cat("  Guardado:", var$nombre, "_mensual y _anual\n")
@@ -124,7 +130,7 @@ for (var in variables) {
   df_clim <- data.frame(coords, valores_clim)
   r_clim  <- rast(df_clim, crs = "EPSG:4326")
   writeRaster(r_clim,
-              paste0("output/descriptivo/mensual/", var$nombre, "_climatologia.tif"),
+              paste0("output/mapas/mensual/", var$nombre, "_climatologia.tif"),
               overwrite = TRUE)
   
   cat("  Guardado:", var$nombre, "_climatologia\n")

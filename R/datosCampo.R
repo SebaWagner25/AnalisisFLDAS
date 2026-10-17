@@ -1,62 +1,37 @@
+# LEE LOS DATOS DIARIOS DE ESTACIONES INTA / SMN (CSV separado por ";")
+# Y DEVUELVE LA SERIE MENSUAL (ver agregarMensual.R)
+#
+# Códigos especiales de los archivos SMN:
+#   "S/P"  = sin precipitación                -> 0 mm   (solo columna PP)
+#   "<0.1" = precipitación inapreciable/traza -> 0 mm   (solo columna PP)
+#   "S/D"  = sin dato                         -> faltante (NA)
+# En la columna T, "S/P" no tiene sentido y se toma como faltante.
+# Los decimales pueden venir con punto (PP) o con coma (T): se aceptan ambos.
+
 datosCampo <- function(ruta_archivo, nombre_variable, proveedor = "INTA") {
 
-  # Leer archivo
   datos <- read.csv2(ruta_archivo,
-                     na.strings = c("S/D", "s/d", "S/P", "s/p", "", "<0.1"),
-                     colClasses = "character",
-                     stringsAsFactors = FALSE)
+                     colClasses   = "character",
+                     na.strings   = c("", "S/D", "s/d"),
+                     fileEncoding = "UTF-8-BOM")   # algunos archivos traen BOM
 
-  datos$Fecha <- as.Date(datos$Fecha, format = ifelse(proveedor == "INTA","%d/%m/%Y","%Y-%m-%d"))
-  datos[[nombre_variable]] <- ifelse(datos[[nombre_variable]] == "S/P", 0, datos[[nombre_variable]])
+  formato_fecha <- if (proveedor == "INTA") "%d/%m/%Y" else "%Y-%m-%d"
+  fecha <- as.Date(datos$Fecha, format = formato_fecha)
 
-  # Agregador mensual según variable: temperatura → mean, resto → sum
-  agregador <- if (nombre_variable == "T") "mean" else "sum"
+  texto <- trimws(datos[[nombre_variable]])
+  if (nombre_variable == "PP") {
+    texto[toupper(texto) %in% c("S/P", "<0.1")] <- "0"
+  }
+  valor <- suppressWarnings(as.numeric(gsub(",", ".", texto)))
 
-  # Convertir primera columna a fecha y extraer columna de valor
-  datos_filtrados <- datos %>%
-    transmute(
-      fecha = Fecha,
-      valor = .[[nombre_variable]]
-    ) %>%
-    mutate(anio_mes = floor_date(fecha, "month"))
-
-  # Contar días disponibles por mes
-  conteo <- datos_filtrados %>%
-    group_by(anio_mes) %>%
-    reframe(
-      total_dias = n(),
-      na_dias = sum(is.na(.data[["valor"]])),
-      dias_mes = days_in_month(anio_mes),
-      porcentaje_na = na_dias / total_dias,
-      porcentaje_completo = total_dias / dias_mes
-    )
-
-  # Meses a descartar: incompletos o con más del 50% de NA
-  meses_incompletos <- conteo %>%
-    filter(porcentaje_completo < 0.5 | porcentaje_na > 0.5) %>%
-    pull(anio_mes)
-
-  # Filtrar datos, excluyendo primer y último mes si están incompletos
-  datos_filtrados <- datos_filtrados %>%
-    filter(!(anio_mes %in% meses_incompletos))
-
-  datos_filtrados$valor <- as.numeric(datos_filtrados$valor)
-
-  if (agregador == "mean") {
-    datos_filtrados <- datos_filtrados %>%
-      select(-anio_mes) %>%
-      mutate(fecha = floor_date(fecha, "month")) %>%
-      group_by(fecha) %>%
-      summarise(valor_campo = mean(valor, na.rm = TRUE)) %>%
-      ungroup()
-  } else {
-    datos_filtrados <- datos_filtrados %>%
-      select(-anio_mes) %>%
-      mutate(fecha = floor_date(fecha, "month")) %>%
-      group_by(fecha) %>%
-      summarise(valor_campo = sum(valor, na.rm = TRUE)) %>%
-      ungroup()
+  # Avisar si quedó algún valor raro que no se pudo leer como número
+  raros <- unique(texto[!is.na(texto) & is.na(valor)])
+  if (length(raros) > 0) {
+    message("  ", basename(ruta_archivo), " (", nombre_variable,
+            "): valores no numéricos tomados como faltantes: ",
+            paste(raros, collapse = ", "))
   }
 
-  datos_filtrados
+  agregarMensual(fecha, valor,
+                 funcion = if (nombre_variable == "T") "mean" else "sum")
 }

@@ -40,6 +40,14 @@ carpetas_fldas <- list(
   t  = "FLDAS_Tair_f_tavg_comp"
 )
 
+# Estaciones a EXCLUIR del análisis conjunto, por variable (usar el id de
+# estaciones.csv). Para no excluir ninguna, dejar character(0).
+excluir <- list(
+  pp = character(0),
+  et = c("VM"),
+  t  = character(0)
+)
+
 # Unidades por variable (para etiquetas de gráficos)
 unidades_var <- list(
   pp = "mm/mes",
@@ -101,7 +109,7 @@ analizar <- function(datos, variable) {
   )
 }
 
-graficar <- function(datos, variable, lmrob_fit) {
+graficar <- function(datos, variable, lmrob_fit, sufijo = "") {
 
   lim <- range(c(datos$valor_campo, datos$valor_fldas), na.rm = TRUE)
 
@@ -129,7 +137,7 @@ graficar <- function(datos, variable, lmrob_fit) {
       panel.grid.minor = element_blank()
     )
 
-  nombre_archivo <- paste0("output/validacion/TODAS_", variable, ".png")
+  nombre_archivo <- paste0("output/validacion/TODAS_", variable, sufijo, ".png")
   ggsave(nombre_archivo, plot = p, width = 6, height = 6, dpi = 300)
   p
 }
@@ -149,6 +157,10 @@ for (var in names(carpetas_fldas)) {
 
   for (est in estaciones) {
     if (!var %in% est$vars) next
+    if (est$id %in% excluir[[var]]) {
+      cat("Excluida:", est$nombre, "\n")
+      next
+    }
 
     cat("Cargando:", est$nombre, "\n")
 
@@ -180,7 +192,14 @@ for (var in names(carpetas_fldas)) {
   # 2. Un único análisis con todas las estaciones juntas
   res       <- analizar(datos_todas, var)
   lmrob_fit <- lmrob(valor_campo ~ valor_fldas, data = datos_todas)
-  graficar(datos_todas, var, lmrob_fit)
+  # Si se excluyeron estaciones, el gráfico se guarda con otro nombre
+  # (ej. TODAS_et_sin_VM.png) para no pisar el original
+  sufijo <- if (length(excluir[[var]]) > 0) {
+    paste0("_sin_", paste(excluir[[var]], collapse = "_"))
+  } else ""
+  res$excluidas <- paste(excluir[[var]], collapse = ", ")
+
+  graficar(datos_todas, var, lmrob_fit, sufijo)
 
   resultados[[length(resultados) + 1]] <- res
 }
@@ -188,10 +207,11 @@ for (var in names(carpetas_fldas)) {
 # ─── TABLA RESUMEN ──────────────────────────────────────────────────────────
 
 tabla <- bind_rows(resultados) %>%
-  select(variable, n_estaciones, n, spearman, sp_pvalor, kendall, ke_pvalor,
+  select(variable, excluidas, n_estaciones, n, spearman, sp_pvalor, kendall, ke_pvalor,
          pendiente, r2_adj, bias, rmse) %>%
   rename(
     "Variable"     = variable,
+    "Excluidas"    = excluidas,
     "Estaciones"   = n_estaciones,
     "n"            = n,
     "ρ Spearman"   = spearman,

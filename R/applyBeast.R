@@ -12,8 +12,9 @@ applyBEAST <- function(y, umbral_cp = 0.5, umbral_tend_cero = 0.05, max_cp = 3) 
   # Pendiente media
   tend_pendiente <- mean(o$trend$slp, na.rm = TRUE)
   
-  # Significancia: probabilidad de que la pendiente NO sea cero
-  # slpSgnZeroPr = prob de pendiente = 0, así que 1 - eso = prob de tendencia real
+  # slpSgnZeroPr = probabilidad de que la pendiente sea CERO (sin tendencia).
+  # Valores bajos (p. ej. < 0.05) indican una tendencia significativa,
+  # por eso se interpreta de forma parecida a un p-valor.
   tend_pvalor <- mean(o$trend$slpSgnZeroPr, na.rm = TRUE)
   
   # Changepoints de tendencia significativos
@@ -78,14 +79,9 @@ graficarBEAST <- function(coord_x, coord_y, variable, nombre_carpeta,
                           espesor_cm = NULL) {
   
   datos  <- importData(nombre_carpeta)
-  datos  <- as.data.frame(datos)
-  
-  fila <- datos %>%
-    filter(abs(x - coord_x) < 0.05, abs(y - coord_y) < 0.05) %>%
-    select(-x, -y)
-  
-  y      <- as.numeric(fila)
-  fechas <- as.Date(colnames(fila))
+  i      <- pixelCercano(datos, coord_x, coord_y)   # ver R/datosPixel.R
+  y      <- as.numeric(datos[i, -(1:2)])
+  fechas <- as.Date(colnames(datos)[-(1:2)])
   
   if (variable %in% c("pp", "et", "t")) {
     y <- convertir_unidades(y, variable = variable, fechas = fechas)
@@ -106,7 +102,8 @@ graficarBEAST <- function(coord_x, coord_y, variable, nombre_carpeta,
 
 #source("R/importData.R")
 #source("R/convertirUnidades.R")
-#source("R/applyBEAST.R")
+#source("R/datosPixel.R")
+#source("R/applyBeast.R")
 #graficarBEAST(coord_x = -65.37, coord_y = -33.75,
 #              variable = "pp",
 #              nombre_carpeta = "FLDAS_Rainf_f_tavg_comp")

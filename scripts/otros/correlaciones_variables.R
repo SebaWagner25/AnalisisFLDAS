@@ -1,27 +1,20 @@
+# EXTRA (fuera de los pasos del informe) - CORRELACIONES ENTRE VARIABLES FLDAS
+# En el píxel de cada estación, correlaciona las variables FLDAS entre sí
+# (Spearman y Kendall) y promedia entre estaciones.
+# Salidas en output/correlaciones/
+
 library(terra)
 library(tidyverse)
 
+source("R/config.R")
 source("R/importData.R")
 source("R/convertirUnidades.R")
+source("R/datosPixel.R")
 
 # ── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 
-variables <- list(
-  pp         = "FLDAS_Rainf_f_tavg_comp",
-  et         = "FLDAS_Evap_tavg_comp",
-  t          = "FLDAS_Tair_f_tavg_comp",
-  hs_0_10    = "FLDAS_SoilMoi00_10cm_tavg_comp",
-  hs_10_40   = "FLDAS_SoilMoi10_40cm_tavg_comp",
-  hs_40_100  = "FLDAS_SoilMoi40_100cm_tavg_comp",
-  hs_100_200 = "FLDAS_SoilMoi100_200cm_tavg_comp"
-)
-
-espesores <- list(
-  hs_0_10    = 10,
-  hs_10_40   = 30,
-  hs_40_100  = 60,
-  hs_100_200 = 100
-)
+variables <- CARPETAS_FLDAS
+espesores <- ESPESORES_HS
 
 combinaciones <- list(
   c("pp",        "et"),
@@ -47,7 +40,8 @@ combinaciones <- list(
   c("hs_40_100", "hs_100_200")
 )
 
-estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE)
+estaciones_df <- read.csv("data/estaciones.csv", stringsAsFactors = FALSE,
+                          fileEncoding = "UTF-8-BOM")
 dir.create("output/correlaciones", recursive = TRUE, showWarnings = FALSE)
 
 # ── CARGAR CADA VARIABLE Y EXTRAER PÍXELES DE ESTACIONES ────────────────────
@@ -58,8 +52,7 @@ series <- list()  # series[[variable]][[estacion_id]] = vector numérico
 for (nombre in names(variables)) {
   cat("  Cargando:", nombre, "\n")
   
-  datos <- importData(variables[[nombre]])
-  datos <- as.data.frame(datos)
+  datos  <- importData(variables[[nombre]])
   fechas <- as.Date(colnames(datos)[-(1:2)])
   
   series[[nombre]] <- list()
@@ -67,13 +60,11 @@ for (nombre in names(variables)) {
   for (i in 1:nrow(estaciones_df)) {
     est <- estaciones_df[i, ]
     
-    fila <- datos %>%
-      filter(abs(x - est$x) < 0.05, abs(y - est$y) < 0.05) %>%
-      select(-x, -y)
+    # Píxel más cercano a la estación (ver R/datosPixel.R)
+    i <- tryCatch(pixelCercano(datos, est$x, est$y), error = function(e) NA)
+    if (is.na(i)) next
     
-    if (nrow(fila) == 0) next
-    
-    y <- as.numeric(fila)
+    y <- as.numeric(datos[i, -(1:2)])
     
     # Convertir unidades
     if (nombre %in% c("pp", "et", "t")) {

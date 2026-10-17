@@ -16,6 +16,9 @@ cdo seldate,1982-03-01,2024-11-30 $VAR/et_mm.nc $VAR/et_filtrado.nc
 # 4. Media anual
 cdo yearmean $VAR/et_mm.nc $VAR/et_anual.nc
 
+# 5. Suma anual
+cdo yearsum $VAR/et_mm.nc $VAR/et_acum_anual.nc
+
 # 5. Media estacional por año
 cdo seasmean $VAR/et_filtrado.nc $VAR/et_estacional.nc
 

@@ -6,6 +6,7 @@ Variables disponibles: pp, et, t, hs_0_10, hs_10_40, hs_40_100, hs_100_200
 """
 
 import os
+import re
 import argparse
 import xarray as xr
 import rioxarray
@@ -69,14 +70,28 @@ archivos_tif = [f for f in archivos_crudos
 
 if not archivos_tif:
     print(f"Error: No se encontraron archivos .tif en {carpeta_entrada}")
-    exit()
+    sys.exit(1)
 
 print(f"Variable: {args.variable}")
 print(f"Archivos encontrados: {len(archivos_tif)}")
 print(f"Archivo de salida: {archivo_salida}")
 
 # --- FECHAS ---
-fechas = pd.date_range(start="1982-01-01", periods=len(archivos_tif), freq="MS")
+# La fecha se lee del nombre de cada archivo (ej. ...M.A198201.001.nc.tiff -> 1982-01).
+# Así, si falta algún mes, los demás no quedan corridos.
+def fecha_de_archivo(ruta):
+    m = re.search(r"\.A(\d{6})", os.path.basename(ruta))
+    if m is None:
+        sys.exit(f"Error: no se encontró la fecha (AAAAMM) en el nombre {os.path.basename(ruta)}")
+    return pd.to_datetime(m.group(1), format="%Y%m")
+
+archivos_tif = sorted(archivos_tif, key=fecha_de_archivo)
+fechas = [fecha_de_archivo(f) for f in archivos_tif]
+
+meses_esperados = pd.date_range(fechas[0], fechas[-1], freq="MS")
+if len(meses_esperados) != len(fechas):
+    print(f"ATENCIÓN: faltan {len(meses_esperados) - len(fechas)} meses entre "
+          f"{fechas[0]:%Y-%m} y {fechas[-1]:%Y-%m}")
 
 # --- PROCESAR ---
 datasets = []
