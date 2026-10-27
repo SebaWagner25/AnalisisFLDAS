@@ -2,7 +2,7 @@
 """
 Convierte archivos .tif de FLDAS a formato NetCDF (.nc)
 Uso: python tiff_a_cdf.py --variable pp
-Variables disponibles: pp, et, t, hs_0_10, hs_10_40, hs_40_100, hs_100_200
+Variables disponibles: pp, et, t, ts, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200
 """
 
 import os
@@ -29,6 +29,22 @@ VARIABLES = {
         "carpeta":  "FLDAS_Tair_f_tavg_comp",
         "nombre_nc": "temperatura"
     },
+    "ts": {
+        "carpeta":  "FLDAS_SoilTemp00_10cm_tavg_comp",
+        "nombre_nc": "temperatura_suelo_0_10"
+    },
+    "ts_10_40": {
+        "carpeta":  "FLDAS_SoilTemp10_40cm_tavg_comp",
+        "nombre_nc": "temperatura_suelo_10_40"
+    },
+    "ts_40_100": {
+        "carpeta":  "FLDAS_SoilTemp40_100cm_tavg_comp",
+        "nombre_nc": "temperatura_suelo_40_100"
+    },
+    "ts_100_200": {
+        "carpeta":  "FLDAS_SoilTemp100_200cm_tavg_comp",
+        "nombre_nc": "temperatura_suelo_100_200"
+    },
     "hs_0_10": {
         "carpeta":  "FLDAS_SoilMoi00_10cm_tavg_comp",
         "nombre_nc": "humedad_suelo_0_10"
@@ -50,7 +66,7 @@ VARIABLES = {
 # --- ARGUMENTOS ---
 parser = argparse.ArgumentParser(description="Convierte .tif de FLDAS a .nc")
 parser.add_argument("--variable", required=True, choices=VARIABLES.keys(),
-                    help="Variable a procesar: pp, et, t, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
+                    help="Variable a procesar: pp, et, t, ts, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
 args = parser.parse_args()
 
 # --- RUTAS ---
@@ -88,10 +104,15 @@ def fecha_de_archivo(ruta):
 archivos_tif = sorted(archivos_tif, key=fecha_de_archivo)
 fechas = [fecha_de_archivo(f) for f in archivos_tif]
 
-meses_esperados = pd.date_range(fechas[0], fechas[-1], freq="MS")
-if len(meses_esperados) != len(fechas):
-    print(f"ATENCIÓN: faltan {len(meses_esperados) - len(fechas)} meses entre "
-          f"{fechas[0]:%Y-%m} y {fechas[-1]:%Y-%m}")
+# Control: meses repetidos (dos archivos con la misma fecha) y meses faltantes
+repetidos = sorted({f for f in fechas if fechas.count(f) > 1})
+faltantes = sorted(set(pd.date_range(fechas[0], fechas[-1], freq="MS")) - set(fechas))
+if faltantes:
+    print("ATENCIÓN: faltan los meses", ", ".join(f"{f:%Y-%m}" for f in faltantes))
+if repetidos:
+    sys.exit("Error: hay más de un archivo para los meses "
+             + ", ".join(f"{f:%Y-%m}" for f in repetidos)
+             + ". Dejar uno solo por mes y volver a correr.")
 
 # --- PROCESAR ---
 datasets = []

@@ -13,14 +13,11 @@ cdo mulc,86400 -muldpm $VAR/et_coords.nc $VAR/et_mm.nc
 # 3. Eliminar estaciones incompletas
 cdo seldate,1982-03-01,2024-11-30 $VAR/et_mm.nc $VAR/et_filtrado.nc
 
-# 4. Media anual
-cdo yearmean $VAR/et_mm.nc $VAR/et_anual.nc
+# 4. Acumulado anual (mm/año, igual que la precipitación)
+cdo yearsum $VAR/et_mm.nc $VAR/et_anual.nc
 
-# 5. Suma anual
-cdo yearsum $VAR/et_mm.nc $VAR/et_acum_anual.nc
-
-# 5. Media estacional por año
-cdo seasmean $VAR/et_filtrado.nc $VAR/et_estacional.nc
+# 5. Acumulado estacional por año (mm/estación, igual que la precipitación)
+cdo seassum $VAR/et_filtrado.nc $VAR/et_estacional.nc
 
 # 6. Medias históricas por estación
 cdo timmean -select,season=DJF $VAR/et_estacional.nc $VAR/et_verano.nc

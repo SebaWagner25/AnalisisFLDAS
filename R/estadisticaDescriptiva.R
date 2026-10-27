@@ -1,8 +1,11 @@
 # ESTADÍSTICA DESCRIPTIVA PREVIA A LA VALIDACIÓN
 # Recibe la serie preprocesada de una estación (columnas: fecha, valor_campo,
 # valor_fldas), tal como la guarda scripts/01_preprocesamiento.R.
-# Devuelve una lista con tablas y gráficos, y además los guarda en disco
-# (tablas en CSV con ";" y coma decimal, listas para abrir en Excel).
+# Devuelve una lista con las tablas (cobertura, resumen, por_mes) y la figura.
+# Los gráficos (serie, boxplot, histograma, ciclo anual y distribución mensual)
+# se guardan juntos en UNA figura con paneles: <carpeta_salida>/<estación>_<VAR>.png
+# (requiere el paquete patchwork). Las tablas NO se guardan acá: las junta
+# scripts/02_descriptivo.R en descriptivo.xlsx.
 # conjunto = TRUE: datos de varias estaciones apilados (análisis general).
 #   En ese caso no se calcula la cobertura ni el gráfico de serie temporal,
 #   porque las fechas se repiten entre estaciones.
@@ -30,7 +33,7 @@ MESES <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun",
 # --- Función principal ------------------------------------------------------
 
 estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
-                                   unidad = "mm/mes",
+                                   unidad,
                                    carpeta_salida = "output/descriptivo",
                                    conjunto = FALSE) {
 
@@ -101,11 +104,6 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
     ) %>%
     mutate(across(where(is.numeric), ~ round(.x, 2)))
 
-  # Guardar tablas
-  write_csv2(cobertura, paste0(prefijo, "_cobertura.csv"))
-  write_csv2(resumen,   paste0(prefijo, "_resumen.csv"))
-  write_csv2(por_mes,   paste0(prefijo, "_por_mes.csv"))
-
   # 4. GRÁFICOS
   etiqueta_y <- paste0(variable, " (", unidad, ")")
   colores <- c(Campo = "#1B2A49", FLDAS = "#B22222")
@@ -113,47 +111,61 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
     theme(plot.title = element_text(hjust = 0.5, face = "bold"),
           legend.title = element_blank())
 
-  g_serie <- ggplot(datos_largo, aes(fecha, valor, color = fuente)) +
-    geom_line(linewidth = 0.5) +
+  # Serie temporal: se completan los meses sin dato con NA para que la línea
+  # se corte ahí (si no, geom_line une los extremos del hueco con una recta).
+  # Los puntos permiten ver los meses aislados (sin vecinos con dato).
+  serie_completa <- datos_largo %>%
+    select(fecha, fuente, valor) %>%
+    complete(fecha = seq(min(fecha), max(fecha), by = "month"), fuente)
+
+  g_serie <- ggplot(serie_completa, aes(fecha, valor, color = fuente)) +
+    geom_line(linewidth = 0.5, na.rm = TRUE) +
+    geom_point(size = 0.6, na.rm = TRUE) +
     scale_color_manual(values = colores) +
-    labs(title = paste("Serie temporal -", titulo), x = NULL, y = etiqueta_y) +
-    tema
+    labs(title = "Serie temporal", x = NULL, y = etiqueta_y) +
+    tema + theme(legend.position = "none")
 
   g_box <- ggplot(datos_largo, aes(fuente, valor, fill = fuente)) +
     geom_boxplot(alpha = 0.6, outlier.colour = "black") +
     scale_fill_manual(values = colores) +
-    labs(title = paste("Boxplot -", titulo), x = NULL, y = etiqueta_y) +
+    labs(title = "Boxplot", x = NULL, y = etiqueta_y) +
     tema + theme(legend.position = "none")
 
   g_hist <- ggplot(datos_largo, aes(valor, fill = fuente)) +
     geom_histogram(bins = 25, color = "white", alpha = 0.8) +
     facet_wrap(~ fuente, ncol = 1) +
     scale_fill_manual(values = colores) +
-    labs(title = paste("Histograma -", titulo), x = etiqueta_y, y = "Frecuencia") +
+    labs(title = "Histograma", x = etiqueta_y, y = "Frecuencia") +
     tema + theme(legend.position = "none")
 
   g_box_mes <- ggplot(datos_largo, aes(mes, valor, fill = fuente)) +
     geom_boxplot(alpha = 0.6, outlier.size = 0.8) +
     scale_fill_manual(values = colores) +
-    labs(title = paste("Distribución mensual -", titulo), x = NULL, y = etiqueta_y) +
-    tema
+    labs(title = "Distribución mensual", x = NULL, y = etiqueta_y) +
+    tema + theme(legend.position = "none")
 
   g_ciclo <- ggplot(por_mes, aes(mes, media, color = fuente, group = fuente)) +
     geom_line(linewidth = 0.8) +
     geom_point(size = 2) +
     scale_color_manual(values = colores) +
-    labs(title = paste("Ciclo anual medio -", titulo), x = NULL, y = etiqueta_y) +
+    labs(title = "Ciclo anual medio", x = NULL, y = etiqueta_y) +
     tema
 
-  graficos <- list(serie = g_serie, boxplot = g_box, histograma = g_hist,
-                   boxplot_mes = g_box_mes, ciclo_anual = g_ciclo)
-  if (conjunto) graficos$serie <- NULL
+  # Una sola figura con todos los paneles (patchwork: "/" apila, "|" pone al lado).
+  # Con varias estaciones juntas no va la serie temporal (las fechas se repiten).
+  fila_medio <- g_box | g_hist | g_ciclo
+  figura <- if (conjunto) fila_medio / g_box_mes else g_serie / fila_medio / g_box_mes
+  # La leyenda (Campo / FLDAS) se muestra una sola vez, la del ciclo anual, abajo
+  figura <- figura +
+    plot_layout(guides = "collect") +
+    plot_annotation(title = titulo,
+                    theme = theme(plot.title = element_text(face = "bold", hjust = 0.5,
+                                                            size = 16),
+                                  legend.position = "bottom"))
 
-  for (nombre in names(graficos)) {
-    ggsave(paste0(prefijo, "_", nombre, ".png"), graficos[[nombre]],
-           width = 8, height = 5, dpi = 300)
-  }
+  ggsave(paste0(prefijo, ".png"), figura,
+         width = 12, height = if (conjunto) 9 else 12, dpi = 300)
 
   list(cobertura = cobertura, resumen = resumen, por_mes = por_mes,
-       graficos = graficos)
+       figura = figura)
 }

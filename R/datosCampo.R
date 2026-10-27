@@ -1,5 +1,6 @@
 # LEE LOS DATOS DIARIOS DE ESTACIONES INTA / SMN (CSV separado por ";")
-# Y DEVUELVE LA SERIE MENSUAL (ver agregarMensual.R)
+# Devuelve la serie DIARIA: tabla con fecha y valor.
+# (el control de calidad y el paso a mensual se hacen en scripts/01_preprocesamiento.R)
 #
 # Códigos especiales de los archivos SMN:
 #   "S/P"  = sin precipitación                -> 0 mm   (solo columna PP)
@@ -32,6 +33,5 @@ datosCampo <- function(ruta_archivo, nombre_variable, proveedor = "INTA") {
             paste(raros, collapse = ", "))
   }
 
-  agregarMensual(fecha, valor,
-                 funcion = if (nombre_variable == "T") "mean" else "sum")
+  tibble(fecha = fecha, valor = valor)
 }

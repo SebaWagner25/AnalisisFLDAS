@@ -83,7 +83,7 @@ graficarBEAST <- function(coord_x, coord_y, variable, nombre_carpeta,
   y      <- as.numeric(datos[i, -(1:2)])
   fechas <- as.Date(colnames(datos)[-(1:2)])
   
-  if (variable %in% c("pp", "et", "t")) {
+  if (seConvierte(variable)) {
     y <- convertir_unidades(y, variable = variable, fechas = fechas)
   }
   

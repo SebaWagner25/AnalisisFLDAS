@@ -31,7 +31,7 @@ for (var in variables) {
   valores <- datos[, -(1:2)]
   
   # Convertir unidades si corresponde
-  if (var$nombre %in% c("pp", "et", "t")) {
+  if (seConvierte(var$nombre)) {
     fechas  <- as.Date(colnames(valores))
     valores <- t(apply(valores, 1, function(fila) {
       convertir_unidades(fila, variable = var$nombre, fechas = fechas)

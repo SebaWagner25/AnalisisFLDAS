@@ -32,6 +32,13 @@ combinaciones <- list(
   c("t",         "hs_10_40"),
   c("t",         "hs_40_100"),
   c("t",         "hs_100_200"),
+  c("pp",        "ts"),
+  c("et",        "ts"),
+  c("t",         "ts"),
+  c("ts",        "hs_0_10"),
+  c("ts",        "hs_10_40"),
+  c("ts",        "hs_40_100"),
+  c("ts",        "hs_100_200"),
   c("hs_0_10",   "hs_10_40"),
   c("hs_0_10",   "hs_40_100"),
   c("hs_0_10",   "hs_100_200"),
@@ -67,7 +74,7 @@ for (nombre in names(variables)) {
     y <- as.numeric(datos[i, -(1:2)])
     
     # Convertir unidades
-    if (nombre %in% c("pp", "et", "t")) {
+    if (seConvierte(nombre)) {
       y <- convertir_unidades(y, variable = nombre, fechas = fechas)
     } else {
       y <- convertir_unidades(y, variable = "hs", fechas = fechas,

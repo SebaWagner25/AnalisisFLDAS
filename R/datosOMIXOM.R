@@ -1,6 +1,8 @@
 # LEE LOS EXCEL DE ESTACIONES OMIXOM (una hoja por variable)
-# Y DEVUELVE LA SERIE MENSUAL (ver agregarMensual.R)
-# variable: "Precipitación", "Evapotranspiración" o "Temperatura"
+# Devuelve la serie DIARIA: tabla con fecha y valor (en temperaturas, también
+# tmin y tmax, para el control de calidad máxima > mínima).
+# (el control de calidad y el paso a mensual se hacen en scripts/01_preprocesamiento.R)
+# variable: "Precipitación", "Evapotranspiración", "Temperatura" o "Temperatura de suelo"
 
 datosOMIXOM <- function(ruta_archivo, variable) {
 
@@ -8,6 +10,7 @@ datosOMIXOM <- function(ruta_archivo, variable) {
   patron_hoja <- switch(variable,
     "Precipitación" = "^Registro de lluvia",
     "Temperatura"   = "^Temperatura °C",   # para no tomar 'Temperatura de suelo'
+    "Temperatura de suelo" = "^Temperatura de suelo",
     paste0("^", variable)
   )
 
@@ -18,7 +21,8 @@ datosOMIXOM <- function(ruta_archivo, variable) {
   datos <- read_excel(ruta_archivo, sheet = hoja, skip = 6, col_types = "text")
 
   # Columna con el valor diario, según la variable
-  if (variable == "Temperatura") {
+  es_temperatura <- variable %in% c("Temperatura", "Temperatura de suelo")
+  if (es_temperatura) {
     columna <- "Promedio"
   } else {
     columna <- intersect(c("Total mm/día", "Lluvia de 9hs a 9hs [mm]"),
@@ -28,9 +32,15 @@ datosOMIXOM <- function(ruta_archivo, variable) {
     stop("No se encontró una columna válida de ", variable, " en la hoja '", hoja, "'")
   }
 
-  fecha <- as.Date(datos$Fecha, format = "%d/%m/%Y")
-  valor <- suppressWarnings(as.numeric(gsub(",", ".", datos[[columna]])))
+  aNumero <- function(x) suppressWarnings(as.numeric(gsub(",", ".", x)))
 
-  agregarMensual(fecha, valor,
-                 funcion = if (variable == "Temperatura") "mean" else "sum")
+  diario <- tibble(fecha = as.Date(datos$Fecha, format = "%d/%m/%Y"),
+                   valor = aNumero(datos[[columna]]))
+
+  # Temperaturas: se agregan la mínima y la máxima del día (si están)
+  if (es_temperatura && all(c("Mínimo", "Máximo") %in% colnames(datos))) {
+    diario$tmin <- aNumero(datos[["Mínimo"]])
+    diario$tmax <- aNumero(datos[["Máximo"]])
+  }
+  diario
 }

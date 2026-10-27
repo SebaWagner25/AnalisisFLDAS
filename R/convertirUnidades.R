@@ -16,10 +16,17 @@ convertir_unidades <- function(valores, variable, fechas, espesor_cm = NULL){
     espesor_mm <- espesor_cm * 10
     return(valores * espesor_mm)
   }
-  else if (variable == "t"){
-    # Temperatura del aire: Kelvin → °C
+  else if (esTemperatura(variable)){
+    # Temperatura del aire (t) y de suelo (ts, ts_10_40, ...): Kelvin → °C
     return(valores - 273.15)
   } else {
-    stop("La variable debe ser 'pp', 'et', 't' o 'hs'.")
+    stop("La variable debe ser 'pp', 'et', 't', 'ts...' o 'hs'.")
   }
   }
+
+# ¿Es una variable de temperatura? (t, ts, ts_10_40, ts_40_100, ts_100_200)
+esTemperatura <- function(variable) variable == "t" | startsWith(variable, "ts")
+
+# ¿La variable FLDAS se convierte con convertir_unidades() sin indicar espesor?
+# (PP, ET y temperaturas; la humedad de suelo necesita el espesor de la capa)
+seConvierte <- function(variable) variable %in% c("pp", "et") | esTemperatura(variable)

@@ -5,6 +5,8 @@
 #   valor_campo          suma (PP, ET) o promedio (T) de los días con dato
 #   porcentaje_completo  días presentes en el archivo / días del mes
 #   porcentaje_na        días sin dato (NA) / días presentes en el archivo
+# Los datos ya tienen que haber pasado por el control de calidad
+# (R/controlCalidad.R: fechas repetidas, negativos, máxima <= mínima).
 # El filtro de meses incompletos NO se hace acá, sino en
 # scripts/01_preprocesamiento.R (umbral en R/config.R).
 
