@@ -9,8 +9,8 @@ Se comparan datos de FLDAS con datos medidos en estaciones meteorológicas de ca
 - Evapotranspiración (ET)
 - Temperatura del aire cerca de la superficie (T)
 - Temperatura de suelo (TS): campo (estaciones OMIXOM) vs. temperatura de suelo 0-10 cm de FLDAS
-- Humedad de suelo (0-10, 10-40, 40-100 y 100-200 cm)
-- Temperatura de suelo 10-40, 40-100 y 100-200 cm (solo mapas, sin validación)
+- Temperatura de suelo (0-10, 10-40, 40-100 y 100-200 cm)
+- Humedad de suelo 10-40, 40-100 y 100-200 cm (solo mapas, sin validación)
 
 **Período FLDAS:** 1982-2024 (mensual)
 
