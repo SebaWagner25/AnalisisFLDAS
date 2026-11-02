@@ -80,17 +80,36 @@ EXCLUIR_MESES <- list(
 #    método NO PARAMÉTRICO (Spearman, Kendall, regresión robusta).
 #    Si todas son normales: PARAMÉTRICO (Pearson, regresión lineal y R²).
 #  - General (todas juntas): la misma regla, aplicada a los datos apilados.
+# (El paso 4, evaluación de la humedad de suelo, usa la misma regla)
 ALFA_SHAPIRO <- 0.05
 
 # ─── VALIDACIÓN GENERAL ─────────────────────────────────────────────────────
 # Estaciones (id de estaciones.csv) que se dejan AFUERA de la validación
 # general, por variable. Para no excluir ninguna: character(0)
+#   hs: análisis regionales del paso 4 (humedad de suelo). VM: FLDAS trata su
+#       píxel como urbano (igual que en et); se informa solo por estación.
 EXCLUIR_GENERAL <- list(
   pp = character(0),
   et = c("VM"),
   t  = character(0),
-  ts = c("OX1")
+  ts = c("OX1"),
+  hs = c("VM")
 )
+
+# ─── PASO 4: EVALUACIÓN DE LA HUMEDAD DE SUELO (SSMI vs SPI-1) ──────────────
+# Estaciones con serie de precipitación suficientemente larga en común con
+# FLDAS para calcular el SPI (al menos ~20 años):
+#   SL y VR: 1982-2023 | VM: 1982-2013 | SR: 2001-2024
+# TL y las OMIXOM (OX1 a OX8) tienen 10 años o menos: no alcanzan para el SPI.
+ESTACIONES_HS <- c("SL", "VR", "VM", "SR")
+
+# Mínimo de años con dato en cada mes calendario para calcular el SPI y el
+# SSMI de ese mes. Si un mes calendario tiene menos, sus valores quedan NA.
+MIN_ANIOS_INDICE <- 10
+
+# Columna 0-100 cm vs SPI (como Spennemann et al., 2015): escalas del SPI que
+# se prueban en la curva de sensibilidad
+ESCALAS_SPI <- 1:12
 
 # ─── ESTACIONES ─────────────────────────────────────────────────────────────
 # Lee data/estaciones.csv y devuelve una lista con una entrada por estación
