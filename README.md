@@ -121,7 +121,7 @@ Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
 - **Sesgo:** test sobre las diferencias pareadas (FLDAS − campo) con el mismo criterio
   (Wilcoxon de rangos con signo si es no paramétrico, t pareado si es paramétrico),
   para toda la serie y para cada mes del año (hoja "Sesgo por mes" de `validacion.xlsx`
-  y `output/validacion/sesgo_mensual_<var>.png`).
+  y panel b. de `output/validacion/analisis_regional_<var>.png`, junto a la dispersión en el panel a.).
 
 ### Paso 4: evaluación indirecta de la humedad de suelo
 No hay mediciones de humedad de suelo en campo (las del SNIH están fuera del área de estudio).

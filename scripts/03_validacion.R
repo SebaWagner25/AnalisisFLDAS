@@ -16,13 +16,14 @@
 #   Además, el sesgo por mes del año (BIAS, PBIAS y el test para cada mes).
 # Salidas en output/validacion/:
 #   estaciones_<var>.png       dispersión FLDAS vs campo, un panel por estación
-#   analisis_regional_<var>.png  dispersión con todas las estaciones juntas
-#   sesgo_mensual_<var>.png    sesgo por mes del año (todas las estaciones juntas)
+#   analisis_regional_<var>.png  todas las estaciones juntas: a. dispersión
+#                                FLDAS vs campo y b. sesgo por mes del año
 #   validacion.xlsx            hojas: Por estación, Análisis regional, Normalidad, Sesgo por mes
 
 library(tidyverse)
 library(robustbase)
 library(openxlsx)
+library(patchwork)
 
 source("R/config.R")
 source("R/validacion.R")
@@ -126,19 +127,25 @@ for (var in VARIABLES_CAMPO) {
 
   # Si se excluyeron estaciones, el gráfico lleva otro nombre (ej. analisis_regional_et_sin_VM.png)
   sufijo <- if (length(excluidas) > 0) paste0("_sin_", paste(excluidas, collapse = "_")) else ""
-  graficarValidacion(datos_todas, res$ajuste,
-                     titulo    = paste(NOMBRE_REGIONAL, "-", toupper(var)),
-                     unidad    = UNIDADES[[var]],
-                     archivo   = paste0("output/validacion/analisis_regional_", var, sufijo, ".png"),
-                     subtitulo = paste0("n = ", nrow(datos_todas), " (",
-                                        n_distinct(datos_todas$estacion), " estaciones)"))
-
   sesgo_mes <- sesgoPorMes(datos_todas, metodo_gen)
-  graficarSesgoMensual(sesgo_mes,
-                       titulo  = paste("Sesgo por mes -", NOMBRE_REGIONAL, "-", toupper(var)),
-                       unidad  = UNIDADES[[var]],
-                       archivo = paste0("output/validacion/sesgo_mensual_", var, sufijo, ".png"),
-                       alfa    = ALFA_SHAPIRO)
+
+  # Una figura con los dos paneles: a. dispersión y b. sesgo por mes
+  g_disp  <- graficarValidacion(datos_todas, res$ajuste,
+                                titulo    = "a. Dispersión FLDAS vs campo",
+                                unidad    = UNIDADES[[var]],
+                                subtitulo = paste0("n = ", nrow(datos_todas), " (",
+                                                   n_distinct(datos_todas$estacion), " estaciones)"))
+  g_sesgo <- graficarSesgoMensual(sesgo_mes,
+                                  titulo = "b. Sesgo por mes",
+                                  unidad = UNIDADES[[var]],
+                                  alfa   = ALFA_SHAPIRO)
+  figura <- (g_disp | g_sesgo) +
+    plot_layout(widths = c(1, 1.3)) +
+    plot_annotation(title = paste(NOMBRE_REGIONAL, "-", toupper(var)),
+                    theme = theme(plot.title = element_text(face = "bold", hjust = 0.5,
+                                                            size = 16)))
+  ggsave(paste0("output/validacion/analisis_regional_", var, sufijo, ".png"),
+         figura, width = 14, height = 6.5, dpi = 300)
   tabla_sesgo_mes[[length(tabla_sesgo_mes) + 1]] <- sesgo_mes %>%
     mutate(estacion = NOMBRE_REGIONAL, variable = toupper(var), .before = 1)
 

@@ -116,7 +116,8 @@ analizar <- function(datos, metodo = c("no parametrico", "parametrico")) {
 
 # Gráfico del sesgo por mes (barras): positivo = FLDAS sobrestima.
 # Las barras con borde negro son meses con diferencia significativa (p < alfa).
-graficarSesgoMensual <- function(sesgo_mes, titulo, unidad, archivo, alfa = 0.05) {
+# archivo = NULL: no lo guarda (sirve para armar una figura con varios paneles).
+graficarSesgoMensual <- function(sesgo_mes, titulo, unidad, archivo = NULL, alfa = 0.05) {
   sesgo_mes <- sesgo_mes %>%
     mutate(signo = ifelse(bias >= 0, "FLDAS sobrestima", "FLDAS subestima"),
            significativo = !is.na(p_dif) & p_dif < alfa)
@@ -135,7 +136,7 @@ graficarSesgoMensual <- function(sesgo_mes, titulo, unidad, archivo, alfa = 0.05
     theme(plot.title = element_text(hjust = 0.5, face = "bold"),
           legend.position = "bottom", panel.grid.minor = element_blank())
 
-  ggsave(archivo, plot = p, width = 8, height = 5, dpi = 300)
+  if (!is.null(archivo)) ggsave(archivo, plot = p, width = 8, height = 5, dpi = 300)
   p
 }
 
@@ -182,8 +183,9 @@ graficarValidacionEstaciones <- function(datos, rectas, titulo, unidad, archivo)
 }
 
 # Gráfico de dispersión FLDAS vs campo, con la recta 1:1 (punteada)
-# y la recta ajustada (roja: lineal o robusta según el método). Lo guarda en 'archivo'.
-graficarValidacion <- function(datos, ajuste, titulo, unidad, archivo, subtitulo = NULL) {
+# y la recta ajustada (roja: lineal o robusta según el método). Lo guarda en 'archivo'
+# (archivo = NULL: no lo guarda, sirve para armar una figura con varios paneles).
+graficarValidacion <- function(datos, ajuste, titulo, unidad, archivo = NULL, subtitulo = NULL) {
 
   lim <- range(c(datos$valor_campo, datos$valor_fldas), na.rm = TRUE)
 
@@ -207,6 +209,6 @@ graficarValidacion <- function(datos, ajuste, titulo, unidad, archivo, subtitulo
       panel.grid.minor = element_blank()
     )
 
-  ggsave(archivo, plot = p, width = 6, height = 6, dpi = 300)
+  if (!is.null(archivo)) ggsave(archivo, plot = p, width = 6, height = 6, dpi = 300)
   p
 }
