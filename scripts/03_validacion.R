@@ -127,7 +127,7 @@ for (var in VARIABLES_CAMPO) {
   # Si se excluyeron estaciones, el gráfico lleva otro nombre (ej. TODAS_et_sin_VM.png)
   sufijo <- if (length(excluidas) > 0) paste0("_sin_", paste(excluidas, collapse = "_")) else ""
   graficarValidacion(datos_todas, res$ajuste,
-                     titulo    = paste("Todas las estaciones -", toupper(var)),
+                     titulo    = paste("Análisis regional -", toupper(var)),
                      unidad    = UNIDADES[[var]],
                      archivo   = paste0("output/validacion/TODAS_", var, sufijo, ".png"),
                      subtitulo = paste0("n = ", nrow(datos_todas), " (",
@@ -135,7 +135,7 @@ for (var in VARIABLES_CAMPO) {
 
   sesgo_mes <- sesgoPorMes(datos_todas, metodo_gen)
   graficarSesgoMensual(sesgo_mes,
-                       titulo  = paste("Sesgo por mes - Todas las estaciones -", toupper(var)),
+                       titulo  = paste("Sesgo por mes - Análisis regional -", toupper(var)),
                        unidad  = UNIDADES[[var]],
                        archivo = paste0("output/validacion/sesgo_mensual_", var, sufijo, ".png"),
                        alfa    = ALFA_SHAPIRO)

@@ -11,8 +11,10 @@ Por cada variable guarda en output/mapas/isolineas/<variable>/:
     estacion_verano.png ... estacion_primavera.png   media histórica de cada estación del año
     anual_media.png                                   media de todos los años
     anual_AAAA.png                                    un mapa por año
-Las 4 estaciones comparten la escala de colores, y los mapas anuales también,
-para que se puedan comparar entre sí.
+Escalas de colores: las 4 estaciones comparten una escala, y la media anual y
+los mapas de cada año comparten otra, para que se puedan comparar entre sí.
+La temperatura del aire y las 4 capas de temperatura de suelo usan las mismas
+escalas entre sí (GRUPOS_ESCALA).
 """
 
 import os
@@ -45,8 +47,23 @@ VARIABLES = {
 
 ESTACIONES = {"verano": "Verano", "otonio": "Otoño", "invierno": "Invierno", "primavera": "Primavera"}
 
+# Variables que comparten la escala de colores (para poder comparar sus mapas).
+# La escala se calcula con todas las variables del grupo que ya tengan sus .nc.
+GRUPOS_ESCALA = [
+    ["t", "ts", "ts_10_40", "ts_40_100", "ts_100_200"],   # temperatura del aire y de suelo
+]
+
 # Zona del mapa (lon mín, lon máx, lat mín, lat máx)
 EXTENSION = [-67.5, -64.8, -36.1, -31.7]
+
+# Píxeles que se dejan sin dato (en blanco), solo en las variables indicadas.
+# (es la misma lista que PIXELES_SIN_DATO en R/config.R: si se cambia acá, cambiarla allá)
+#   Villa Mercedes: FLDAS lo trata como zona urbana; ET casi nula y humedad de suelo anómala
+HUMEDAD = ["hs_0_10", "hs_10_40", "hs_40_100", "hs_100_200"]
+PIXELES_SIN_DATO = [
+    # (lon,   lat,    variables)
+    (-65.45, -33.65, ["et"] + HUMEDAD),
+]
 
 # Límites políticos (shapefiles en data/shp/; si no están, el mapa se hace igual sin ellos)
 #   archivo                          grosor de línea
@@ -77,7 +94,12 @@ def leer(variable, periodo):
     """Lee data/nc/<variable>/<variable>_<periodo>.nc y devuelve el campo (tiempo, lat, lon)."""
     ds = xr.open_dataset(f"data/nc/{variable}/{variable}_{periodo}.nc")
     nombre = [v for v in ds.data_vars if "lat" in ds[v].dims][0]   # saltea time_bnds
-    return ds[nombre]
+    campo = ds[nombre]
+    for lon, lat, variables in PIXELES_SIN_DATO:
+        if variable in variables:
+            pixel = (abs(campo.lon - lon) < 0.01) & (abs(campo.lat - lat) < 0.01)
+            campo = campo.where(~pixel)
+    return campo
 
 
 def niveles(campos):
@@ -124,20 +146,23 @@ def isolineas(variable):
     os.makedirs(salida, exist_ok=True)
     print(f"=== {titulo} ===")
 
+    # Variables con las que comparte la escala (ella misma, o su grupo en GRUPOS_ESCALA)
+    grupo = next((g for g in GRUPOS_ESCALA if variable in g), [variable])
+    grupo = [v for v in grupo if os.path.exists(f"data/nc/{v}/{v}_anual.nc")]
+
     # 1. Media histórica de cada estación del año (misma escala para las 4)
     estaciones = {e: leer(variable, e).isel(time=0) for e in ESTACIONES}
-    niv = niveles(estaciones.values())
+    niv = niveles([leer(v, e) for v in grupo for e in ESTACIONES])
     for e, campo in estaciones.items():
         mapa(campo, f"{titulo} - {ESTACIONES[e]}", unidad_est, paleta, niv,
              f"{salida}/estacion_{e}.png")
 
-    # 2. Media de todos los años y un mapa por año (misma escala para todos)
+    # 2. Media de todos los años y un mapa por año (misma escala para todos,
+    #    calculada con los años particulares)
     anual = leer(variable, "anual")
-    media = anual.mean("time")
-    mapa(media, f"{titulo} - Media anual", unidad_anual, paleta, niveles([media]),
+    niv = niveles([leer(v, "anual") for v in grupo])
+    mapa(anual.mean("time"), f"{titulo} - Media anual", unidad_anual, paleta, niv,
          f"{salida}/anual_media.png")
-
-    niv = niveles([anual])
     for anio, campo in zip(anual.time.dt.year.values, anual):
         mapa(campo, f"{titulo} - {anio}", unidad_anual, paleta, niv,
              f"{salida}/anual_{anio}.png")

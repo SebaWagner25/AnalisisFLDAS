@@ -35,6 +35,15 @@ for (var in variables) {
   cat("Procesando:", var$nombre, "\n")
   
   datos <- importData(var$carpeta)
+
+  # Píxeles que se dejan sin dato en esta variable (PIXELES_SIN_DATO, R/config.R)
+  for (p in PIXELES_SIN_DATO) {
+    if (var$nombre %in% p$variables) {
+      fila  <- abs(datos[, "x"] - p$x) < 0.01 & abs(datos[, "y"] - p$y) < 0.01
+      datos <- datos[!fila, ]
+      cat("  Píxel sin dato:", p$x, p$y, "\n")
+    }
+  }
   coords <- datos[, 1:2]
   valores <- datos[, -(1:2)]
   

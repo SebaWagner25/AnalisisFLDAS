@@ -39,7 +39,8 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
 
   dir.create(carpeta_salida, recursive = TRUE, showWarnings = FALSE)
   prefijo <- file.path(carpeta_salida, paste0(nombre_estacion, "_", variable))
-  titulo  <- paste0(variable, " - ", nombre_estacion)
+  titulo  <- paste0(variable, " - ",
+                    if (conjunto) "Análisis regional" else nombre_estacion)
 
   # Pasar a formato largo: una columna "fuente" (Campo / FLDAS) y una "valor"
   datos_largo <- datos %>%
@@ -106,6 +107,13 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
 
   # 4. GRÁFICOS
   etiqueta_y <- paste0(variable, " (", unidad, ")")
+
+  # Títulos de los paneles con una letra (a., b., ...) para citarlos en el texto,
+  # en orden de lectura. La figura regional no tiene serie temporal, así que
+  # ahí el Boxplot es "a."
+  paneles <- c(if (!conjunto) "Serie temporal", "Boxplot", "Histograma",
+               "Ciclo anual medio", "Distribución mensual")
+  titulos <- setNames(paste0(letters[seq_along(paneles)], ". ", paneles), paneles)
   colores <- c(Campo = "#1B2A49", FLDAS = "#B22222")
   tema <- theme_light(base_size = 12) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold"),
@@ -122,33 +130,33 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
     geom_line(linewidth = 0.5, na.rm = TRUE) +
     geom_point(size = 0.6, na.rm = TRUE) +
     scale_color_manual(values = colores) +
-    labs(title = "Serie temporal", x = NULL, y = etiqueta_y) +
+    labs(title = titulos["Serie temporal"], x = NULL, y = etiqueta_y) +
     tema + theme(legend.position = "none")
 
   g_box <- ggplot(datos_largo, aes(fuente, valor, fill = fuente)) +
     geom_boxplot(alpha = 0.6, outlier.colour = "black") +
     scale_fill_manual(values = colores) +
-    labs(title = "Boxplot", x = NULL, y = etiqueta_y) +
+    labs(title = titulos["Boxplot"], x = NULL, y = etiqueta_y) +
     tema + theme(legend.position = "none")
 
   g_hist <- ggplot(datos_largo, aes(valor, fill = fuente)) +
     geom_histogram(bins = 25, color = "white", alpha = 0.8) +
     facet_wrap(~ fuente, ncol = 1) +
     scale_fill_manual(values = colores) +
-    labs(title = "Histograma", x = etiqueta_y, y = "Frecuencia") +
+    labs(title = titulos["Histograma"], x = etiqueta_y, y = "Frecuencia") +
     tema + theme(legend.position = "none")
 
   g_box_mes <- ggplot(datos_largo, aes(mes, valor, fill = fuente)) +
     geom_boxplot(alpha = 0.6, outlier.size = 0.8) +
     scale_fill_manual(values = colores) +
-    labs(title = "Distribución mensual", x = NULL, y = etiqueta_y) +
+    labs(title = titulos["Distribución mensual"], x = NULL, y = etiqueta_y) +
     tema + theme(legend.position = "none")
 
   g_ciclo <- ggplot(por_mes, aes(mes, media, color = fuente, group = fuente)) +
     geom_line(linewidth = 0.8) +
     geom_point(size = 2) +
     scale_color_manual(values = colores) +
-    labs(title = "Ciclo anual medio", x = NULL, y = etiqueta_y) +
+    labs(title = titulos["Ciclo anual medio"], x = NULL, y = etiqueta_y) +
     tema
 
   # Una sola figura con todos los paneles (patchwork: "/" apila, "|" pone al lado).

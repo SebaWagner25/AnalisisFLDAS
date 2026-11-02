@@ -26,6 +26,17 @@ CARPETAS_FLDAS <- list(
 CARPETA_TS_VALIDACION <- CARPETAS_FLDAS$ts          # SoilTemp 0-10 cm (original)
 # CARPETA_TS_VALIDACION <- "FLDAS_RadT_tavg_comp"         # RadT (borrador)
 
+# ─── MAPAS: PÍXELES SIN DATO ────────────────────────────────────────────────
+# Píxeles de FLDAS que se dejan sin dato (en blanco) en los mapas del paso 5,
+# solo para las variables indicadas. No afecta la validación.
+# (python/isolineas.py tiene la misma lista: si se cambia acá, cambiarla allá)
+#   Villa Mercedes (x = -65.45, y = -33.65): FLDAS lo trata como zona urbana;
+#   ET casi nula (~88 mm/año vs ~650 alrededor) y humedad de suelo anómala.
+PIXELES_SIN_DATO <- list(
+  list(x = -65.45, y = -33.65,
+       variables = c("et", "hs_0_10", "hs_10_40", "hs_40_100", "hs_100_200"))
+)
+
 # Espesor (cm) de cada capa de suelo, para pasar humedad de suelo a mm
 ESPESORES_HS <- list(hs_0_10 = 10, hs_10_40 = 30, hs_40_100 = 60, hs_100_200 = 100)
 
