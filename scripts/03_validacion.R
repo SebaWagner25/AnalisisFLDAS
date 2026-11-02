@@ -16,9 +16,9 @@
 #   Además, el sesgo por mes del año (BIAS, PBIAS y el test para cada mes).
 # Salidas en output/validacion/:
 #   estaciones_<var>.png       dispersión FLDAS vs campo, un panel por estación
-#   TODAS_<var>.png            dispersión con todas las estaciones juntas
+#   analisis_regional_<var>.png  dispersión con todas las estaciones juntas
 #   sesgo_mensual_<var>.png    sesgo por mes del año (todas las estaciones juntas)
-#   validacion.xlsx            hojas: Por estación, General, Normalidad, Sesgo por mes
+#   validacion.xlsx            hojas: Por estación, Análisis regional, Normalidad, Sesgo por mes
 
 library(tidyverse)
 library(robustbase)
@@ -124,23 +124,23 @@ for (var in VARIABLES_CAMPO) {
 
   res <- analizar(datos_todas, metodo_gen)
 
-  # Si se excluyeron estaciones, el gráfico lleva otro nombre (ej. TODAS_et_sin_VM.png)
+  # Si se excluyeron estaciones, el gráfico lleva otro nombre (ej. analisis_regional_et_sin_VM.png)
   sufijo <- if (length(excluidas) > 0) paste0("_sin_", paste(excluidas, collapse = "_")) else ""
   graficarValidacion(datos_todas, res$ajuste,
-                     titulo    = paste("Análisis regional -", toupper(var)),
+                     titulo    = paste(NOMBRE_REGIONAL, "-", toupper(var)),
                      unidad    = UNIDADES[[var]],
-                     archivo   = paste0("output/validacion/TODAS_", var, sufijo, ".png"),
+                     archivo   = paste0("output/validacion/analisis_regional_", var, sufijo, ".png"),
                      subtitulo = paste0("n = ", nrow(datos_todas), " (",
                                         n_distinct(datos_todas$estacion), " estaciones)"))
 
   sesgo_mes <- sesgoPorMes(datos_todas, metodo_gen)
   graficarSesgoMensual(sesgo_mes,
-                       titulo  = paste("Sesgo por mes - Análisis regional -", toupper(var)),
+                       titulo  = paste("Sesgo por mes -", NOMBRE_REGIONAL, "-", toupper(var)),
                        unidad  = UNIDADES[[var]],
                        archivo = paste0("output/validacion/sesgo_mensual_", var, sufijo, ".png"),
                        alfa    = ALFA_SHAPIRO)
   tabla_sesgo_mes[[length(tabla_sesgo_mes) + 1]] <- sesgo_mes %>%
-    mutate(estacion = "TODAS", variable = toupper(var), .before = 1)
+    mutate(estacion = NOMBRE_REGIONAL, variable = toupper(var), .before = 1)
 
   tabla_general[[length(tabla_general) + 1]] <- res$tabla %>%
     mutate(variable     = toupper(var),
@@ -183,7 +183,7 @@ print(quitarVacias(tabla_gen), width = Inf)
 escribirExcel(
   list(
     "Por estación"  = quitarVacias(tabla_est),
-    "General"       = quitarVacias(tabla_gen),
+    "Análisis regional" = quitarVacias(tabla_gen),
     "Normalidad"    = tabla_norm,
     "Sesgo por mes" = bind_rows(tabla_sesgo_mes) %>% rename(any_of(nombres))
   ),

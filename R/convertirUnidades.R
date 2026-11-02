@@ -20,7 +20,7 @@ convertir_unidades <- function(valores, variable, fechas, espesor_cm = NULL){
     # Temperatura del aire (t) y de suelo (ts, ts_10_40, ...): Kelvin → °C
     return(valores - 273.15)
   } else {
-    stop("La variable debe ser 'pp', 'et', 't', 'ts...' o 'hs'.")
+    stop("La variable debe ser 'pp', 'et', 't', 'ts_...' o 'hs'.")
   }
   }
 

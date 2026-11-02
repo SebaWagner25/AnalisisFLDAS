@@ -19,7 +19,7 @@
 #   series_hs.png               A: SPI-1 y SSMI 0-10 cm en el tiempo, por estación
 #   correlacion_mensual_hs.png  A: correlación por mes (promedio ± desvío entre estaciones)
 #   sensibilidad_hs100.png      B: correlación según la escala del SPI
-#   evaluacion_hs.xlsx          hojas de A (Índices, Por estación, General,
+#   evaluacion_hs.xlsx          hojas de A (Índices, Por estación, Análisis regional,
 #                               Normalidad, Por mes) y de B (0-100 ...)
 
 library(tidyverse)
@@ -126,7 +126,7 @@ tabla_gen <- correlacion(datos_todas, metodo_gen) %>%
   mutate(excluidas = paste(excluidas, collapse = ", "),
          n_estaciones = n_distinct(datos_todas$estacion), .before = 1)
 tabla_mes <- bind_rows(tabla_mes, correlacionPorMes(datos_todas, metodo_gen) %>%
-                         mutate(estacion = "TODAS", .before = 1))
+                         mutate(estacion = NOMBRE_REGIONAL, .before = 1))
 
 # ═══ B. COLUMNA 0-100 cm vs SPI DE 1 A 12 MESES (Spennemann et al., 2015) ═══
 
@@ -165,9 +165,9 @@ sensibilidad <- bind_rows(
     ungroup() %>% mutate(estacion = unname(nombre_est[id]), .before = 1) %>% select(-id),
   todas_100 %>% filter(!id %in% excluidas) %>%
     group_by(escala) %>% group_modify(~ correlacion(.x, metodo_100)) %>%
-    ungroup() %>% mutate(estacion = "TODAS", .before = 1)
+    ungroup() %>% mutate(estacion = NOMBRE_REGIONAL, .before = 1)
 )
-escala_max <- sensibilidad %>% filter(estacion == "TODAS") %>% slice_max(r, n = 1) %>% pull(escala)
+escala_max <- sensibilidad %>% filter(estacion == NOMBRE_REGIONAL) %>% slice_max(r, n = 1) %>% pull(escala)
 cat("B. Método", metodo_100, "| escala de máxima correlación regional: SPI-", escala_max, "\n")
 
 graficarSensibilidad(sensibilidad, escala_max, nombreCoef(metodo_100),
@@ -193,7 +193,7 @@ indices <- bind_rows(series, .id = "id") %>%
 escribirExcel(
   list("Índices"            = indices,
        "Por estación"       = nombrar(tabla_est),
-       "General"            = nombrar(tabla_gen),
+       "Análisis regional"  = nombrar(tabla_gen),
        "Normalidad"         = nombrar(normalidad),
        "Por mes"            = nombrar(tabla_mes),
        "0-100 resultado"    = nombrar(sensibilidad %>% filter(escala == escala_max)),

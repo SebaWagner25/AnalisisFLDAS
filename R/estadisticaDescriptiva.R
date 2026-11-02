@@ -40,7 +40,7 @@ estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
   dir.create(carpeta_salida, recursive = TRUE, showWarnings = FALSE)
   prefijo <- file.path(carpeta_salida, paste0(nombre_estacion, "_", variable))
   titulo  <- paste0(variable, " - ",
-                    if (conjunto) "Análisis regional" else nombre_estacion)
+                    if (conjunto) NOMBRE_REGIONAL else nombre_estacion)
 
   # Pasar a formato largo: una columna "fuente" (Campo / FLDAS) y una "valor"
   datos_largo <- datos %>%

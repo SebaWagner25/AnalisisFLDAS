@@ -129,14 +129,13 @@ graficarCorrelacionMensualHS <- function(tabla, archivo, nombre_coef) {
 }
 
 # Curva de sensibilidad: correlación entre el SSMI de 0-100 cm y el SPI de
-# 1 a 12 meses, una línea por estación y la regional (fila "TODAS": las
+# 1 a 12 meses, una línea por estación y la regional (fila NOMBRE_REGIONAL: las
 # estaciones no excluidas juntas) en negro, con la escala de máxima correlación
 # regional marcada (como la Fig. 2 de Spennemann et al., 2015).
 # tabla:            data.frame con estacion, escala y r
 # nombre_regional:  cómo se llama la línea regional en la leyenda
 graficarSensibilidad <- function(tabla, escala_max, nombre_coef, archivo,
-                                 nombre_regional = "Conjunto SMN") {
-  tabla      <- tabla %>% mutate(estacion = recode(estacion, TODAS = nombre_regional))
+                                 nombre_regional = NOMBRE_REGIONAL) {
   estaciones <- setdiff(unique(tabla$estacion), nombre_regional)
   colores    <- c(setNames(scales::hue_pal()(length(estaciones)), estaciones),
                   setNames("black", nombre_regional))

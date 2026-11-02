@@ -8,7 +8,7 @@ CARPETAS_FLDAS <- list(
   pp         = "FLDAS_Rainf_f_tavg_comp",
   et         = "FLDAS_Evap_tavg_comp",
   t          = "FLDAS_Tair_f_tavg_comp",
-  ts         = "FLDAS_SoilTemp00_10cm_tavg_comp",  # temperatura de suelo 0-10 cm
+  ts_0_10    = "FLDAS_SoilTemp00_10cm_tavg_comp",  # temperatura de suelo 0-10 cm
   ts_10_40   = "FLDAS_SoilTemp10_40cm_tavg_comp",  # (las capas más profundas
   ts_40_100  = "FLDAS_SoilTemp40_100cm_tavg_comp", #  solo se usan en mapas
   ts_100_200 = "FLDAS_SoilTemp100_200cm_tavg_comp",#  y BEAST, no se validan)
@@ -23,7 +23,7 @@ CARPETAS_FLDAS <- list(
 # radiativa de la superficie de FLDAS (RadT) en lugar de SoilTemp 0-10 cm.
 # Solo cambia los pasos 1 a 3; los mapas y BEAST siguen usando SoilTemp.
 # Para volver al original, comentar la línea de RadT y descomentar la de SoilTemp.
-CARPETA_TS_VALIDACION <- CARPETAS_FLDAS$ts          # SoilTemp 0-10 cm (original)
+CARPETA_TS_VALIDACION <- CARPETAS_FLDAS$ts_0_10          # SoilTemp 0-10 cm (original)
 # CARPETA_TS_VALIDACION <- "FLDAS_RadT_tavg_comp"         # RadT (borrador)
 
 # ─── MAPAS: PÍXELES SIN DATO ────────────────────────────────────────────────
@@ -41,10 +41,10 @@ PIXELES_SIN_DATO <- list(
 ESPESORES_HS <- list(hs_0_10 = 10, hs_10_40 = 30, hs_40_100 = 60, hs_100_200 = 100)
 
 # Variables que se comparan con datos de campo (pasos 1 a 3)
-VARIABLES_CAMPO <- c("pp", "et", "t", "ts")
+VARIABLES_CAMPO <- c("pp", "et", "t", "ts_0_10")
 
 # Unidades (para etiquetas de tablas y gráficos)
-UNIDADES <- list(pp = "mm/mes", et = "mm/mes", t = "°C", ts = "°C")
+UNIDADES <- list(pp = "mm/mes", et = "mm/mes", t = "°C", ts_0_10 = "°C")
 
 # ─── PREPROCESAMIENTO: DATOS FALTANTES ──────────────────────────────────────
 # Un mes se descarta si:
@@ -68,7 +68,7 @@ EXCLUIR_MESES <- list(
   ),
   et = list(),
   t  = list(),
-  ts = list(
+  ts_0_10 = list(
     OX2 = c("2020-10", "2020-11", "2020-12")
   )
 )
@@ -83,6 +83,10 @@ EXCLUIR_MESES <- list(
 # (El paso 4, evaluación de la humedad de suelo, usa la misma regla)
 ALFA_SHAPIRO <- 0.05
 
+# Nombre con el que aparece el análisis con todas las estaciones juntas
+# (títulos de gráficos, tablas y leyendas)
+NOMBRE_REGIONAL <- "Análisis regional"
+
 # ─── VALIDACIÓN GENERAL ─────────────────────────────────────────────────────
 # Estaciones (id de estaciones.csv) que se dejan AFUERA de la validación
 # general, por variable. Para no excluir ninguna: character(0)
@@ -91,7 +95,7 @@ EXCLUIR_GENERAL <- list(
   pp = character(0),
   et = c("VM"),
   t  = character(0),
-  ts = c("OX1"),
+  ts_0_10 = c("OX1"),
   hs = character(0)
 )
 

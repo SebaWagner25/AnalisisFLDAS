@@ -1,5 +1,5 @@
 # PASO 1 - PREPROCESAMIENTO
-# Para cada estación y variable (PP, ET, T y TS = temperatura de suelo):
+# Para cada estación y variable (PP, ET, T y TS_0_10 = temperatura de suelo 0-10 cm):
 #   1. Lee los datos diarios de campo, les aplica el control de calidad
 #      (R/controlCalidad.R) y los pasa a valores mensuales:
 #        - fechas repetidas: se deja una (si los valores difieren, queda NA)
@@ -44,7 +44,7 @@ estaciones <- cargarEstaciones()
 
 # Nombre de cada variable en los archivos de campo
 nombre_omixom <- list(pp = "Precipitación", et = "Evapotranspiración", t = "Temperatura",
-                      ts = "Temperatura de suelo")
+                      ts_0_10 = "Temperatura de suelo")
 nombre_csv    <- list(pp = "PP", et = "ET", t = "T")
 
 leerCampo <- function(est, variable) {
@@ -67,7 +67,7 @@ for (var in VARIABLES_CAMPO) {
 
   # Se importa FLDAS UNA sola vez por variable y se reutiliza para todas las estaciones
   # (TS: la carpeta se elige en R/config.R, CARPETA_TS_VALIDACION - BORRADOR)
-  carpeta <- if (var == "ts") CARPETA_TS_VALIDACION else CARPETAS_FLDAS[[var]]
+  carpeta <- if (var == "ts_0_10") CARPETA_TS_VALIDACION else CARPETAS_FLDAS[[var]]
   cat("FLDAS:", carpeta, "\n")
   fldas <- importData(carpeta)
 

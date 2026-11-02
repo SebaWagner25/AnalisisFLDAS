@@ -5,9 +5,9 @@
 # boxplot, histograma, ciclo anual y distribución mensual).
 # Salidas en output/descriptivo/:
 #   estaciones/<id>_<VAR>.png   figura de cada estación y variable
-#   general/TODAS_<VAR>.png     figura con todas las estaciones juntas
-#   descriptivo.xlsx            todas las tablas: Resumen general, Resumen por
-#                               estación, Por mes - general, Por mes - estaciones,
+#   regional/analisis_regional_<VAR>.png   figura con todas las estaciones juntas
+#   descriptivo.xlsx            todas las tablas: Resumen regional, Resumen por
+#                               estación, Por mes - regional, Por mes - estaciones,
 #                               Cobertura
 
 library(tidyverse)
@@ -59,10 +59,10 @@ for (var in VARIABLES_CAMPO) {
   # ── General: todas las estaciones juntas ──────────────────────────
   datos_todas <- bind_rows(datos_var)
   if (nrow(datos_todas) >= 4) {
-    res <- estadisticaDescriptiva(datos_todas, nombre_estacion = "TODAS",
+    res <- estadisticaDescriptiva(datos_todas, nombre_estacion = "analisis_regional",
                                   variable = toupper(var),
                                   unidad = UNIDADES[[var]],
-                                  carpeta_salida = "output/descriptivo/general",
+                                  carpeta_salida = "output/descriptivo/regional",
                                   conjunto = TRUE)
     generales[[length(generales) + 1]] <- res$resumen %>%
       mutate(variable = toupper(var),
@@ -95,9 +95,9 @@ prepararTabla <- function(df) {
 
 escribirExcel(
   list(
-    "Resumen general"      = bind_rows(generales)   %>% prepararTabla(),
+    "Resumen regional"     = bind_rows(generales)   %>% prepararTabla(),
     "Resumen por estación" = bind_rows(resumenes)   %>% prepararTabla(),
-    "Por mes - general"    = bind_rows(por_mes_gen) %>% prepararTabla(),
+    "Por mes - regional"   = bind_rows(por_mes_gen) %>% prepararTabla(),
     "Por mes - estaciones" = bind_rows(por_mes_est) %>% prepararTabla(),
     "Cobertura"            = bind_rows(coberturas)  %>% prepararTabla()
   ),

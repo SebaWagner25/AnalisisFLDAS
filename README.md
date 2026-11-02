@@ -8,7 +8,7 @@ Se comparan datos de FLDAS con datos medidos en estaciones meteorológicas de ca
 - Precipitación (PP)
 - Evapotranspiración (ET)
 - Temperatura del aire cerca de la superficie (T)
-- Temperatura de suelo (TS): campo (estaciones OMIXOM) vs. temperatura de suelo 0-10 cm de FLDAS
+- Temperatura de suelo 0-10 cm (`ts_0_10`): campo (estaciones OMIXOM) vs. temperatura de suelo 0-10 cm de FLDAS
 - Temperatura de suelo (0-10, 10-40, 40-100 y 100-200 cm)
 - Humedad de suelo 0-10 cm y columna 0-100 cm: evaluación indirecta con el SPI (paso 4)
 - Humedad de suelo 100-200 cm (solo mapas, sin validación)
@@ -87,8 +87,8 @@ Abrir `00_ANALISIS.Rproj` en RStudio y correr los scripts en orden desde la raí
 | Paso | Script | Qué hace | Salida |
 |------|--------|----------|--------|
 | 1 | `scripts/01_preprocesamiento.R` | Lee los datos de campo, pasa a valores mensuales, descarta meses incompletos, extrae FLDAS en cada estación y convierte unidades | `output/preprocesado/` (`series.csv` y `preprocesamiento.xlsx`) |
-| 2 | `scripts/02_descriptivo.R` | Estadística descriptiva Campo vs FLDAS, por estación y general | `output/descriptivo/` (una figura por estación y variable, una general por variable y `descriptivo.xlsx`) |
-| 3 | `scripts/03_validacion.R` | Validación FLDAS vs campo, por estación y general | `output/validacion/` (figuras por variable y `validacion.xlsx`) |
+| 2 | `scripts/02_descriptivo.R` | Estadística descriptiva Campo vs FLDAS, por estación y regional | `output/descriptivo/` (una figura por estación y variable, una regional por variable y `descriptivo.xlsx`) |
+| 3 | `scripts/03_validacion.R` | Validación FLDAS vs campo, por estación y regional | `output/validacion/` (figuras por variable y `validacion.xlsx`) |
 | 4 | `scripts/04_evaluacion_HS.R` | Evaluación indirecta de la humedad de suelo de FLDAS: SSMI vs SPI de las estaciones (0-10 cm y 0-100 cm) | `output/evaluacion_hs/` (figuras y `evaluacion_hs.xlsx`) |
 | 5 | `scripts/05_mapas_descriptivos.R` + `python/` + `cdo/` | Mapas descriptivos e isolíneas | `output/mapas/`, `data/nc/` |
 | 6 | `scripts/06_beast.R` | Tendencias y cambios abruptos con BEAST (probablemente pase a otro proyecto) | `output/beast/` |
@@ -109,14 +109,14 @@ No se hizo corrección de sesgo: la validación del paso 3 indicó que no hacía
   (leves: fuera de Q1 − 1,5·RIC / Q3 + 1,5·RIC; extremos: fuera de Q1 − 3·RIC / Q3 + 3·RIC)
   en la hoja "Outliers" de `output/preprocesado/preprocesamiento.xlsx`. No se borran solos: los meses a descartar
   se anotan en `EXCLUIR_MESES` (`R/config.R`).
-- FLDAS: PP y ET de kg/m²/s a mm/mes; T y TS de K a °C. Se usa el píxel más cercano a la estación.
+- FLDAS: PP y ET de kg/m²/s a mm/mes; T y temperatura de suelo de K a °C. Se usa el píxel más cercano a la estación.
 
 ### Paso 3: elección del método de validación
 Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
 - **Por estación:** si al menos una estación (serie de campo o FLDAS) no es normal, todas las
   estaciones de esa variable se validan con el método **no paramétrico** (Spearman, Kendall,
   regresión robusta). Si todas son normales, con el **paramétrico** (Pearson, regresión lineal, R²).
-- **General:** la misma regla sobre los datos de todas las estaciones juntas.
+- **Análisis regional:** la misma regla sobre los datos de todas las estaciones juntas.
 - El resultado del test de cada estación queda en la hoja "Normalidad" de `output/validacion/validacion.xlsx`.
 - **Sesgo:** test sobre las diferencias pareadas (FLDAS − campo) con el mismo criterio
   (Wilcoxon de rangos con signo si es no paramétrico, t pareado si es paramétrico),
@@ -169,7 +169,7 @@ Criterios comunes:
 python python/tiff_a_cdf.py --variable pp
 python python/tiff_a_cdf.py --variable et
 python python/tiff_a_cdf.py --variable t
-python python/tiff_a_cdf.py --variable ts
+python python/tiff_a_cdf.py --variable ts_0_10
 python python/tiff_a_cdf.py --variable ts_10_40
 python python/tiff_a_cdf.py --variable ts_40_100
 python python/tiff_a_cdf.py --variable ts_100_200
@@ -184,7 +184,7 @@ python python/tiff_a_cdf.py --variable hs_100_200
 bash cdo/pp.sh
 bash cdo/et.sh
 bash cdo/t.sh
-bash cdo/ts.sh
+bash cdo/ts.sh ts_0_10
 bash cdo/ts.sh ts_10_40
 bash cdo/ts.sh ts_40_100
 bash cdo/ts.sh ts_100_200
@@ -196,12 +196,14 @@ bash cdo/hs.sh hs_100_200
 
 #### 3. Mapas con isolíneas
 ```bash
-python python/isolineas.py --variable pp et t ts
+python python/isolineas.py --variable pp et t ts_0_10
 python python/isolineas.py --variable ts_10_40 ts_40_100 ts_100_200
 python python/isolineas.py --variable hs_0_10 hs_10_40 hs_40_100 hs_100_200
 ```
-Salida en `output/mapas/isolineas/<variable>/`: un mapa por estación del año (misma escala
-para las 4), la media anual y un mapa por año. Los límites de departamentos y provincias se
+Salida en `output/mapas/isolineas/<variable>/`: un mapa por estación del año
+(`<variable>_verano.png`, ..., misma escala para las 4), la media anual
+(`<variable>_media_anual.png`) y un mapa por año (`<variable>_AAAA.png`), estos dos últimos
+con la misma escala. La temperatura del aire y las 4 capas de temperatura de suelo comparten escala. Los límites de departamentos y provincias se
 leen de `data/shp/departamento.shp` y `data/shp/provincia.shp` (si no están, los mapas se
 hacen sin ellos).
 

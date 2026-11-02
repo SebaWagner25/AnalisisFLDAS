@@ -2,7 +2,7 @@
 """
 Convierte archivos .tif de FLDAS a formato NetCDF (.nc)
 Uso: python tiff_a_cdf.py --variable pp
-Variables disponibles: pp, et, t, ts, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200
+Variables disponibles: pp, et, t, ts_0_10, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200
 """
 
 import os
@@ -29,7 +29,7 @@ VARIABLES = {
         "carpeta":  "FLDAS_Tair_f_tavg_comp",
         "nombre_nc": "temperatura"
     },
-    "ts": {
+    "ts_0_10": {
         "carpeta":  "FLDAS_SoilTemp00_10cm_tavg_comp",
         "nombre_nc": "temperatura_suelo_0_10"
     },
@@ -66,7 +66,7 @@ VARIABLES = {
 # --- ARGUMENTOS ---
 parser = argparse.ArgumentParser(description="Convierte .tif de FLDAS a .nc")
 parser.add_argument("--variable", required=True, choices=VARIABLES.keys(),
-                    help="Variable a procesar: pp, et, t, ts, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
+                    help="Variable a procesar: pp, et, t, ts_0_10, ts_10_40, ts_40_100, ts_100_200, hs_0_10, hs_10_40, hs_40_100, hs_100_200")
 args = parser.parse_args()
 
 # --- RUTAS ---

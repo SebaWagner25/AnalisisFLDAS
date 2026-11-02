@@ -1,22 +1,20 @@
 #!/bin/bash
 # Procesamiento CDO - Temperatura de suelo (SoilTemp*_tavg)
 # Uso (correr desde la raíz del proyecto):
-#   bash cdo/ts.sh              capa 0-10 cm (equivale a: bash cdo/ts.sh ts)
+#   bash cdo/ts.sh ts_0_10
 #   bash cdo/ts.sh ts_10_40
 #   bash cdo/ts.sh ts_40_100
 #   bash cdo/ts.sh ts_100_200
 # Antes: python python/tiff_a_cdf.py --variable <capa>
 
-CAPA=${1:-ts}
+CAPA=$1
 
-case $CAPA in
-    ts)         NOMBRE="temperatura_suelo_0_10" ;;
-    ts_10_40)   NOMBRE="temperatura_suelo_10_40" ;;
-    ts_40_100)  NOMBRE="temperatura_suelo_40_100" ;;
-    ts_100_200) NOMBRE="temperatura_suelo_100_200" ;;
-    *) echo "Error: capa no válida ($CAPA). Opciones: ts, ts_10_40, ts_40_100, ts_100_200"; exit 1 ;;
-esac
+if [ -z "$CAPA" ]; then
+    echo "Error: indicar la capa. Ejemplo: bash cdo/ts.sh ts_0_10"
+    exit 1
+fi
 
+NOMBRE="temperatura_suelo_${CAPA#ts_}"
 VAR="data/nc/$CAPA"
 
 # 1. Renombrar coordenadas

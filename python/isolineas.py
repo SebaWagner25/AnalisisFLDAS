@@ -3,14 +3,15 @@
 Mapas con isolíneas a partir de los NetCDF procesados con CDO (paso 5).
 Uso (correr desde la raíz del proyecto, después de cdo/<variable>.sh):
     python python/isolineas.py --variable pp
-    python python/isolineas.py --variable pp et t ts      (varias a la vez)
-Variables disponibles: pp, et, t, ts, ts_10_40, ts_40_100, ts_100_200,
+    python python/isolineas.py --variable pp et t ts_0_10      (varias a la vez)
+Variables disponibles: pp, et, t, ts_0_10, ts_10_40, ts_40_100, ts_100_200,
                        hs_0_10, hs_10_40, hs_40_100, hs_100_200
 
 Por cada variable guarda en output/mapas/isolineas/<variable>/:
-    estacion_verano.png ... estacion_primavera.png   media histórica de cada estación del año
-    anual_media.png                                   media de todos los años
-    anual_AAAA.png                                    un mapa por año
+    <variable>_verano.png ... <variable>_primavera.png   media histórica de cada estación del año
+    <variable>_media_anual.png                           media de todos los años
+    <variable>_AAAA.png                                  un mapa por año
+    (ej.: pp_invierno.png, pp_media_anual.png, pp_2015.png)
 Escalas de colores: las 4 estaciones comparten una escala, y la media anual y
 los mapas de cada año comparten otra, para que se puedan comparar entre sí.
 La temperatura del aire y las 4 capas de temperatura de suelo usan las mismas
@@ -35,7 +36,7 @@ VARIABLES = {
     "pp":         ("Precipitación",                          "mm/estación",     "mm/año",     "GnBu"),
     "et":         ("Evapotranspiración",                     "mm/estación",     "mm/año",     "YlGn"),
     "t":          ("Temperatura del aire",                   "°C",              "°C",         "RdYlBu_r"),
-    "ts":         ("Temperatura de suelo 0-10 cm",           "°C",              "°C",         "RdYlBu_r"),
+    "ts_0_10":    ("Temperatura de suelo 0-10 cm",           "°C",              "°C",         "RdYlBu_r"),
     "ts_10_40":   ("Temperatura de suelo 10-40 cm",          "°C",              "°C",         "RdYlBu_r"),
     "ts_40_100":  ("Temperatura de suelo 40-100 cm",         "°C",              "°C",         "RdYlBu_r"),
     "ts_100_200": ("Temperatura de suelo 100-200 cm",        "°C",              "°C",         "RdYlBu_r"),
@@ -50,7 +51,7 @@ ESTACIONES = {"verano": "Verano", "otonio": "Otoño", "invierno": "Invierno", "p
 # Variables que comparten la escala de colores (para poder comparar sus mapas).
 # La escala se calcula con todas las variables del grupo que ya tengan sus .nc.
 GRUPOS_ESCALA = [
-    ["t", "ts", "ts_10_40", "ts_40_100", "ts_100_200"],   # temperatura del aire y de suelo
+    ["t", "ts_0_10", "ts_10_40", "ts_40_100", "ts_100_200"],   # temperatura del aire y de suelo
 ]
 
 # Zona del mapa (lon mín, lon máx, lat mín, lat máx)
@@ -155,17 +156,17 @@ def isolineas(variable):
     niv = niveles([leer(v, e) for v in grupo for e in ESTACIONES])
     for e, campo in estaciones.items():
         mapa(campo, f"{titulo} - {ESTACIONES[e]}", unidad_est, paleta, niv,
-             f"{salida}/estacion_{e}.png")
+             f"{salida}/{variable}_{e}.png")
 
     # 2. Media de todos los años y un mapa por año (misma escala para todos,
     #    calculada con los años particulares)
     anual = leer(variable, "anual")
     niv = niveles([leer(v, "anual") for v in grupo])
     mapa(anual.mean("time"), f"{titulo} - Media anual", unidad_anual, paleta, niv,
-         f"{salida}/anual_media.png")
+         f"{salida}/{variable}_media_anual.png")
     for anio, campo in zip(anual.time.dt.year.values, anual):
         mapa(campo, f"{titulo} - {anio}", unidad_anual, paleta, niv,
-             f"{salida}/anual_{anio}.png")
+             f"{salida}/{variable}_{anio}.png")
 
     print(f"  Listo. Mapas en {salida}")
 
