@@ -86,22 +86,23 @@ ALFA_SHAPIRO <- 0.05
 # ─── VALIDACIÓN GENERAL ─────────────────────────────────────────────────────
 # Estaciones (id de estaciones.csv) que se dejan AFUERA de la validación
 # general, por variable. Para no excluir ninguna: character(0)
-#   hs: análisis regionales del paso 4 (humedad de suelo). VM: FLDAS trata su
-#       píxel como urbano (igual que en et); se informa solo por estación.
+#   hs: análisis regionales del paso 4 (humedad de suelo)
 EXCLUIR_GENERAL <- list(
   pp = character(0),
   et = c("VM"),
   t  = character(0),
   ts = c("OX1"),
-  hs = c("VM")
+  hs = character(0)
 )
 
 # ─── PASO 4: EVALUACIÓN DE LA HUMEDAD DE SUELO (SSMI vs SPI-1) ──────────────
 # Estaciones con serie de precipitación suficientemente larga en común con
 # FLDAS para calcular el SPI (al menos ~20 años):
-#   SL y VR: 1982-2023 | VM: 1982-2013 | SR: 2001-2024
+#   SL y VR: 1982-2023 | SR: 2001-2024
 # TL y las OMIXOM (OX1 a OX8) tienen 10 años o menos: no alcanzan para el SPI.
-ESTACIONES_HS <- c("SL", "VR", "VM", "SR")
+# VM (1982-2013) no se usa: FLDAS trata su píxel como urbano y la humedad de
+# suelo no responde a la lluvia como en el resto (igual que la ET en el paso 3).
+ESTACIONES_HS <- c("SL", "VR", "SR")
 
 # Mínimo de años con dato en cada mes calendario para calcular el SPI y el
 # SSMI de ese mes. Si un mes calendario tiene menos, sus valores quedan NA.

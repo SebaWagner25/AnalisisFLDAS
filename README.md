@@ -138,8 +138,10 @@ validó en el paso 3. Dos análisis:
   agronómico para una región húmeda; acá la escala se elige con los datos.
 
 Criterios comunes:
-- **Estaciones:** `ESTACIONES_HS` en `R/config.R` (SL, VR, VM y SR): las que tienen al menos
+- **Estaciones:** `ESTACIONES_HS` en `R/config.R` (SL, VR y SR): las que tienen al menos
   ~20 años de precipitación en común con FLDAS. TL y las OMIXOM tienen 10 años o menos.
+  VM no se usa: FLDAS trata su píxel como urbano y su humedad de suelo no responde a la lluvia
+  como en el resto (la correlación con el perfil de 0-100 cm baja al aumentar la escala del SPI).
 - **Período:** todos los meses de cada estación en común con FLDAS (los de `series.csv`).
   El SPI y el SSMI de una estación se calculan sobre los mismos meses.
 - **SPI y SSMI:** función `spi()` del paquete SPEI, versión 1.7.2 (Beguería y Vicente-Serrano, 2017),
@@ -159,9 +161,7 @@ Criterios comunes:
     de `EXCLUIR_GENERAL$hs` (como la Fig. 5 de Jung et al., 2020).
   - `sensibilidad_hs100.png` (B): correlación según la escala del SPI, por estación y para el conjunto
     de estaciones SMN (Fig. 2 de Spennemann et al., 2015).
-- **Análisis regionales (A y B):** se apilan las estaciones, salvo las de `EXCLUIR_GENERAL$hs`.
-  VM se informa solo por estación (como la ET en el paso 3): FLDAS trata su píxel como urbano y
-  su humedad del perfil profundo no responde a la lluvia.
+- **Análisis regionales (A y B):** se apilan las estaciones, salvo las de `EXCLUIR_GENERAL$hs` (ninguna).
 
 ### Paso 5: isolíneas
 #### 1. Conversión de archivos FLDAS a NetCDF
