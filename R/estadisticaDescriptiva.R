@@ -35,10 +35,12 @@ MESES <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun",
 estadisticaDescriptiva <- function(datos, nombre_estacion, variable,
                                    unidad,
                                    carpeta_salida = "output/descriptivo",
-                                   conjunto = FALSE) {
+                                   conjunto = FALSE, excluidas = character(0)) {
 
   dir.create(carpeta_salida, recursive = TRUE, showWarnings = FALSE)
-  prefijo <- file.path(carpeta_salida, paste0(nombre_estacion, "_", variable))
+  # Si se excluyeron estaciones (análisis regional), el nombre del archivo lo indica
+  sufijo  <- if (length(excluidas) > 0) paste0("_sin_", paste(excluidas, collapse = "_")) else ""
+  prefijo <- file.path(carpeta_salida, paste0(nombre_estacion, "_", variable, sufijo))
   titulo  <- paste0(variable, " - ",
                     if (conjunto) NOMBRE_REGIONAL else nombre_estacion)
 

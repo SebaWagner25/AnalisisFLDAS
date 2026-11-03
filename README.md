@@ -111,6 +111,12 @@ No se hizo corrección de sesgo: la validación del paso 3 indicó que no hacía
   se anotan en `EXCLUIR_MESES` (`R/config.R`).
 - FLDAS: PP y ET de kg/m²/s a mm/mes; T y temperatura de suelo de K a °C. Se usa el píxel más cercano a la estación.
 
+### Pasos 2 y 3: análisis regional
+El análisis regional (todas las estaciones juntas) del descriptivo y de la validación deja afuera
+las mismas estaciones: las de `EXCLUIR_GENERAL` en `R/config.R` (p. ej., VM en ET por su píxel
+urbano y OX1 en temperatura de suelo por la falla del sensor). Esas estaciones siguen en los
+análisis por estación. Los archivos regionales llevan el sufijo `_sin_<id>`.
+
 ### Paso 3: elección del método de validación
 Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
 - **Por estación:** si al menos una estación (serie de campo o FLDAS) no es normal, todas las
@@ -128,7 +134,9 @@ Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
 No hay mediciones de humedad de suelo en campo (las del SNIH están fuera del área de estudio).
 Se compara un índice estandarizado de humedad de suelo (SSMI) de FLDAS con el índice estandarizado
 de precipitación (SPI) de las estaciones. La precipitación de FLDAS no se vuelve a evaluar: ya se
-validó en el paso 3. Dos análisis:
+validó en el paso 3. Primero se grafica la humedad de FLDAS de las 4 capas en el tiempo, en el
+píxel de cada estación (`capas_hs.png`), para mostrar cómo se suaviza y se retrasa con la
+profundidad. Después, dos análisis:
 - **A. Capa 0-10 cm vs SPI-1** (Jung et al., 2020): sin quitar tendencias, los 12 meses del año.
   Correlación por estación, general y por mes del año.
 - **B. Columna 0-100 cm vs SPI de 1 a 12 meses** (Spennemann et al., 2015): la humedad de 0-100 cm
@@ -163,6 +171,13 @@ Criterios comunes:
   - `sensibilidad_hs100.png` (B): correlación según la escala del SPI, por estación y para el conjunto
     de estaciones SMN (Fig. 2 de Spennemann et al., 2015).
 - **Análisis regionales (A y B):** se apilan las estaciones, salvo las de `EXCLUIR_GENERAL$hs` (ninguna).
+- **Tablas (`evaluacion_hs.xlsx`):** mismo formato que `validacion.xlsx` del paso 3 (columna "Método",
+  p de Shapiro, "ρ Spearman", "τ Kendall", etc.). A y B van en las mismas hojas; para verlos por
+  separado se filtra la columna "Análisis" (`A. Jung (0-10 cm)` o `B. Spennemann (0-100 cm)`), que
+  tiene el mismo texto en todas las hojas, junto con "Escala SPI (meses)":
+  - "Por estación", "Análisis regional" y "Normalidad": A y B (B en la escala de máxima correlación regional;
+    en "Normalidad", B en todas las escalas).
+  - "Por mes": solo A. "Sensibilidad": solo B, todas las escalas.
 
 ### Paso 5: isolíneas
 #### 1. Conversión de archivos FLDAS a NetCDF

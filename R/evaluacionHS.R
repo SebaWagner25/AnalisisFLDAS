@@ -77,6 +77,38 @@ correlacionPorMes <- function(datos, metodo) {
 
 # Series temporales de SPI-1 y SSMI, un panel por estación con su correlación
 # (como la Fig. 6 de Spennemann et al., 2015).
+# Serie temporal de la humedad de suelo de FLDAS, un panel por capa y una
+# línea por estación: línea fina = valor mensual; línea gruesa = media móvil
+# de 12 meses (centrada). Muestra cómo la humedad se suaviza y se retrasa con
+# la profundidad. Describe la dinámica temporal, no valida los valores.
+# datos: data.frame con estacion, capa, fecha y valor (m³/m³)
+graficarCapasHS <- function(datos, archivo) {
+  etiquetas <- c(hs_0_10 = "0-10 cm", hs_10_40 = "10-40 cm",
+                 hs_40_100 = "40-100 cm", hs_100_200 = "100-200 cm")
+  datos <- datos %>%
+    mutate(capa = factor(etiquetas[capa], levels = etiquetas)) %>%
+    group_by(estacion, capa) %>%
+    arrange(fecha, .by_group = TRUE) %>%
+    mutate(movil = as.numeric(stats::filter(valor, rep(1 / 12, 12), sides = 2))) %>%
+    ungroup()
+
+  p <- ggplot(datos, aes(x = fecha, y = valor, color = estacion)) +
+    geom_line(alpha = 0.25, linewidth = 0.3, na.rm = TRUE) +
+    geom_line(aes(y = movil), linewidth = 0.8, na.rm = TRUE) +
+    facet_wrap(~ capa, ncol = 1) +
+    labs(title = "Humedad de suelo de FLDAS por capa",
+         subtitle = "Línea fina: valor mensual. Línea gruesa: media móvil de 12 meses.",
+         x = NULL, y = "Humedad de suelo (m³/m³)", color = NULL) +
+    theme_light(base_size = 11) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5),
+          strip.text = element_text(face = "bold"),
+          legend.position = "bottom", panel.grid.minor = element_blank())
+
+  ggsave(archivo, plot = p, width = 11, height = 9, dpi = 300)
+  p
+}
+
 # datos: data.frame con estacion, fecha, valor_campo (SPI-1) y valor_fldas (SSMI)
 # coef:  data.frame con estacion y etiqueta (texto del coeficiente)
 graficarSeriesHS <- function(datos, coef, archivo) {

@@ -1,11 +1,13 @@
 # PASO 2 - ESTADÍSTICA DESCRIPTIVA
 # Usa las series que genera scripts/01_preprocesamiento.R (correr ese antes).
-# Para cada estación y variable, y también para todas las estaciones juntas,
+# Para cada estación y variable, y también para todas las estaciones juntas
+# (análisis regional, sin las estaciones de EXCLUIR_GENERAL en R/config.R),
 # compara Campo vs FLDAS con tablas y una figura de paneles (serie temporal,
 # boxplot, histograma, ciclo anual y distribución mensual).
 # Salidas en output/descriptivo/:
 #   estaciones/<id>_<VAR>.png   figura de cada estación y variable
 #   regional/analisis_regional_<VAR>.png   figura con todas las estaciones juntas
+#                               (con sufijo _sin_<id> si se excluyeron estaciones)
 #   descriptivo.xlsx            todas las tablas: Resumen regional, Resumen por
 #                               estación, Por mes - regional, Por mes - estaciones,
 #                               Cobertura
@@ -56,16 +58,19 @@ for (var in VARIABLES_CAMPO) {
     datos_var[[length(datos_var) + 1]] <- datos %>% mutate(estacion = est$id)
   }
 
-  # ── General: todas las estaciones juntas ──────────────────────────
-  datos_todas <- bind_rows(datos_var)
+  # ── Análisis regional: todas las estaciones juntas, salvo las excluidas ──
+  # (EXCLUIR_GENERAL en R/config.R, las mismas que en la validación del paso 3)
+  excluidas   <- intersect(EXCLUIR_GENERAL[[var]], sapply(estaciones, `[[`, "id"))
+  datos_todas <- bind_rows(datos_var) %>% filter(!estacion %in% excluidas)
   if (nrow(datos_todas) >= 4) {
     res <- estadisticaDescriptiva(datos_todas, nombre_estacion = "analisis_regional",
                                   variable = toupper(var),
                                   unidad = UNIDADES[[var]],
                                   carpeta_salida = "output/descriptivo/regional",
-                                  conjunto = TRUE)
+                                  conjunto = TRUE, excluidas = excluidas)
     generales[[length(generales) + 1]] <- res$resumen %>%
       mutate(variable = toupper(var),
+             excluidas = paste(excluidas, collapse = ", "),
              n_estaciones = n_distinct(datos_todas$estacion), .before = 1)
     por_mes_gen[[length(por_mes_gen) + 1]] <- res$por_mes %>%
       mutate(variable = toupper(var), .before = 1)
@@ -76,7 +81,7 @@ for (var in VARIABLES_CAMPO) {
 
 # Nombres de columnas para el Excel
 nombres_excel <- c(
-  "Variable" = "variable", "Estación" = "estacion", "Estaciones" = "n_estaciones",
+  "Variable" = "variable", "Estación" = "estacion", "Estaciones" = "n_estaciones", "Excluidas" = "excluidas",
   "Fuente" = "fuente", "Mes" = "mes", "n" = "n",
   "Media" = "media", "Mediana" = "mediana", "Desvío" = "desvio", "CV (%)" = "cv_pct",
   "Mínimo" = "minimo", "P10" = "p10", "P25" = "p25", "P75" = "p75", "P90" = "p90",

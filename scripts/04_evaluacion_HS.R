@@ -2,7 +2,8 @@
 # No hay mediciones de humedad de suelo en campo. Se compara un índice
 # estandarizado de humedad de suelo (SSMI) de FLDAS con el índice estandarizado
 # de precipitación (SPI) de las estaciones. La precipitación de FLDAS ya se
-# validó en el paso 3. Dos análisis:
+# validó en el paso 3. Primero se grafica la humedad de las 4 capas en el
+# tiempo (cómo se propaga en profundidad) y después hay dos análisis:
 #   A. Capa 0-10 cm vs SPI-1 (Jung et al., 2020): sin quitar tendencias.
 #   B. Columna 0-100 cm (capas 0-10 + 10-40 + 40-100) vs SPI de 1 a 12 meses
 #      (Spennemann et al., 2015): series sin tendencia lineal, curva de
@@ -16,11 +17,14 @@
 #     (Pearson, o Spearman y Kendall) y su p-valor.
 # Requiere haber corrido antes scripts/01_preprocesamiento.R.
 # Salidas en output/evaluacion_hs/:
+#   capas_hs.png                humedad de suelo de FLDAS de las 4 capas en el tiempo, por estación
 #   series_hs.png               A: SPI-1 y SSMI 0-10 cm en el tiempo, por estación
 #   correlacion_mensual_hs.png  A: correlación por mes (promedio ± desvío entre estaciones)
 #   sensibilidad_hs100.png      B: correlación según la escala del SPI
-#   evaluacion_hs.xlsx          hojas de A (Índices, Por estación, Análisis regional,
-#                               Normalidad, Por mes) y de B (0-100 ...)
+#   evaluacion_hs.xlsx          mismo formato que validacion.xlsx (paso 3). A y B en las
+#                               mismas hojas, separables con el filtro de las columnas
+#                               "Análisis" y "Escala SPI (meses)": Por estación, Análisis
+#                               regional y Normalidad (A y B), Por mes (A) y Sensibilidad (B)
 
 library(tidyverse)
 library(terra)
@@ -49,9 +53,12 @@ pp <- read.csv("output/preprocesado/series.csv") %>%
   mutate(fecha = as.Date(fecha)) %>%
   filter(variable == "pp")
 
-# Humedad de suelo de FLDAS de las tres primeras capas (se importa una vez)
-capas  <- c("hs_0_10", "hs_10_40", "hs_40_100")
-fldas  <- setNames(lapply(capas, function(capa) importData(CARPETAS_FLDAS[[capa]])), capas)
+# Humedad de suelo de FLDAS de las 4 capas (se importa una vez).
+# Los análisis B (0-100 cm) usan las tres primeras.
+capas_todas <- names(ESPESORES_HS)
+capas       <- c("hs_0_10", "hs_10_40", "hs_40_100")
+fldas       <- setNames(lapply(capas_todas, function(capa) importData(CARPETAS_FLDAS[[capa]])),
+                        capas_todas)
 
 # Humedad de suelo (mm) de una capa en el píxel de la estación
 hsCapa <- function(est, capa) {
@@ -71,6 +78,18 @@ datosEstacion <- function(est, hs) {
 # Método según la regla de Shapiro-Wilk del paso 3 (normalidad: tabla con columna normal)
 elegirMetodo <- function(normalidad) if (all(normalidad$normal)) "parametrico" else "no parametrico"
 nombreCoef   <- function(metodo) if (metodo == "parametrico") "Pearson" else "Spearman"
+
+# ═══ HUMEDAD DE SUELO POR CAPA (serie temporal) ════════════════════════════
+# En m³/m³ (como los mapas del paso 5), para comparar capas de distinto espesor:
+# hsCapa() da mm, se divide por el espesor de la capa en mm.
+graficarCapasHS(
+  datos   = map_dfr(estaciones, function(est) map_dfr(capas_todas, function(capa) {
+              espesor_mm <- ESPESORES_HS[[capa]] * 10
+              hsCapa(est, capa) %>%
+                transmute(estacion = nombre_est[[est$id]], capa = capa, fecha,
+                          valor = valor_fldas / espesor_mm)
+            })),
+  archivo = "output/evaluacion_hs/capas_hs.png")
 
 # ═══ A. CAPA 0-10 cm vs SPI-1 (Jung et al., 2020) ═══════════════════════════
 # valor_campo = SPI-1 de la estación, valor_fldas = SSMI de FLDAS (mismos
@@ -122,9 +141,6 @@ datos_todas <- bind_rows(lapply(names(series), function(id)
 
 metodo_gen <- if (sonNormales(datos_todas, ALFA_SHAPIRO)) "parametrico" else "no parametrico"
 cat("A. General (n =", nrow(datos_todas), "): método", metodo_gen, "\n")
-tabla_gen <- correlacion(datos_todas, metodo_gen) %>%
-  mutate(excluidas = paste(excluidas, collapse = ", "),
-         n_estaciones = n_distinct(datos_todas$estacion), .before = 1)
 tabla_mes <- bind_rows(tabla_mes, correlacionPorMes(datos_todas, metodo_gen) %>%
                          mutate(estacion = NOMBRE_REGIONAL, .before = 1))
 
@@ -174,31 +190,84 @@ graficarSensibilidad(sensibilidad, escala_max, nombreCoef(metodo_100),
                      archivo = "output/evaluacion_hs/sensibilidad_hs100.png")
 
 # ═══ TABLAS ═════════════════════════════════════════════════════════════════
+# Mismo formato que validacion.xlsx (paso 3): columna "Método" (parametrico /
+# no parametrico), p de Shapiro y los coeficientes con los mismos nombres.
+# Los análisis A y B van en las mismas hojas: la columna "Análisis" (el mismo
+# texto en todas las hojas) y la escala del SPI permiten filtrar cada uno.
+
+analisis_A <- "A. Jung (0-10 cm)"
+analisis_B <- "B. Spennemann (0-100 cm)"
+
+# Pasa la salida de correlacion() a las columnas del paso 3
+formatoValidacion <- function(df) {
+  df %>%
+    mutate(
+      metodo    = ifelse(metodo == "pearson", "parametrico", "no parametrico"),
+      pearson   = ifelse(metodo == "parametrico", r, NA_real_),
+      pe_pvalor = ifelse(metodo == "parametrico", p_valor, NA_real_),
+      spearman  = ifelse(metodo == "no parametrico", r, NA_real_),
+      sp_pvalor = ifelse(metodo == "no parametrico", p_valor, NA_real_),
+      kendall   = tau,
+      ke_pvalor = p_kendall
+    ) %>%
+    select(-r, -p_valor, -tau, -p_kendall)
+}
 
 nombres <- c(
-  "Estación" = "estacion", "Excluidas" = "excluidas", "Estaciones" = "n_estaciones",
-  "Correlación" = "metodo", "n" = "n", "Mes" = "mes", "Escala SPI (meses)" = "escala",
-  "r" = "r", "p-valor" = "p_valor", "τ Kendall" = "tau", "p-valor (Kendall)" = "p_kendall",
-  "p Shapiro (SPI)" = "sw_campo_p", "p Shapiro (SSMI)" = "sw_fldas_p",
-  "Normal (ambos)" = "normal", "Estación (id)" = "id"
+  "Estación" = "estacion", "Estación (id)" = "id", "Análisis" = "analisis",
+  "Excluidas" = "excluidas", "Estaciones" = "n_estaciones",
+  "Método" = "metodo", "n" = "n", "Mes" = "mes", "Escala SPI (meses)" = "escala",
+  "p Shapiro (campo)" = "sw_campo_p", "p Shapiro (FLDAS)" = "sw_fldas_p",
+  "Normal (campo y FLDAS)" = "normal",
+  "r Pearson" = "pearson", "p-valor (Pe)" = "pe_pvalor",
+  "ρ Spearman" = "spearman", "p-valor (Sp)" = "sp_pvalor",
+  "τ Kendall" = "kendall", "p-valor (Ke)" = "ke_pvalor"
 )
-# Quita las columnas vacías (Kendall, si el método es paramétrico) y renombra
+# Quita las columnas vacías (las del método que no se usó) y renombra
 nombrar <- function(df) df %>% select(where(~ !all(is.na(.x)))) %>% rename(any_of(nombres))
 
-indices <- bind_rows(series, .id = "id") %>%
-  transmute("Estación (id)" = id, "Mes" = format(fecha, "%Y-%m"),
-            "PP campo (mm/mes)" = pp_campo, "HS FLDAS 0-10 cm (mm)" = round(hs_fldas, 2),
-            "SPI-1 campo" = round(valor_campo, 3), "SSMI FLDAS" = round(valor_fldas, 3))
+# p de Shapiro de unos datos (SPI de campo y SSMI de FLDAS)
+shapiroDatos <- function(d) tibble(sw_campo_p = pShapiro(d$valor_campo),
+                                   sw_fldas_p = pShapiro(d$valor_fldas))
+
+# Por estación: A (0-10 cm, SPI-1) y B (0-100 cm, en la escala de máxima correlación regional)
+hoja_est <- bind_rows(
+  map_dfr(names(series), function(id) bind_cols(
+    tibble(estacion = nombre_est[[id]], analisis = analisis_A, escala = 1L),
+    shapiroDatos(series[[id]]),
+    correlacion(series[[id]], metodo_est))),
+  map_dfr(names(datos_100), function(id) bind_cols(
+    tibble(estacion = nombre_est[[id]], analisis = analisis_B, escala = escala_max),
+    shapiroDatos(datos_100[[id]] %>% filter(escala == escala_max)),
+    correlacion(datos_100[[id]] %>% filter(escala == escala_max), metodo_100)))
+) %>% formatoValidacion() %>% relocate(metodo, n, .after = escala)
+
+# Análisis regional: A y B (sin las estaciones excluidas)
+regional_B <- todas_100 %>% filter(!id %in% excluidas, escala == escala_max)
+hoja_reg <- bind_rows(
+  bind_cols(tibble(analisis = analisis_A, escala = 1L), shapiroDatos(datos_todas),
+            correlacion(datos_todas, metodo_gen)),
+  bind_cols(tibble(analisis = analisis_B, escala = escala_max), shapiroDatos(regional_B),
+            correlacion(regional_B, metodo_100))
+) %>%
+  mutate(excluidas = paste(excluidas, collapse = ", "),
+         n_estaciones = n_distinct(datos_todas$estacion), .after = escala) %>%
+  formatoValidacion() %>% relocate(metodo, n, .after = n_estaciones)
+
+# Normalidad de cada estación: A (escala 1) y B (cada escala del SPI)
+hoja_norm <- bind_rows(
+  normalidad %>% mutate(analisis = analisis_A, escala = 1L),
+  normalidad_100 %>% mutate(analisis = analisis_B)
+) %>% relocate(id, analisis, escala)
 
 escribirExcel(
-  list("Índices"            = indices,
-       "Por estación"       = nombrar(tabla_est),
-       "Análisis regional"  = nombrar(tabla_gen),
-       "Normalidad"         = nombrar(normalidad),
-       "Por mes"            = nombrar(tabla_mes),
-       "0-100 resultado"    = nombrar(sensibilidad %>% filter(escala == escala_max)),
-       "0-100 sensibilidad" = nombrar(sensibilidad),
-       "0-100 normalidad"   = nombrar(normalidad_100)),
+  list("Por estación"       = nombrar(hoja_est),
+       "Análisis regional"  = nombrar(hoja_reg),
+       "Normalidad"         = nombrar(hoja_norm),
+       "Por mes"            = nombrar(tabla_mes %>% formatoValidacion() %>%
+                                        mutate(analisis = analisis_A, escala = 1L, .after = estacion)),
+       "Sensibilidad"       = nombrar(sensibilidad %>% formatoValidacion() %>%
+                                        mutate(analisis = analisis_B, .after = estacion))),
   "output/evaluacion_hs/evaluacion_hs.xlsx"
 )
 cat("\nListo. Resultados en output/evaluacion_hs/\n")
