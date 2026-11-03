@@ -10,10 +10,8 @@
 #   - General: la misma regla sobre los datos de todas las estaciones juntas.
 # Paramétrico:    correlación de Pearson, regresión lineal (lm) y R².
 # No paramétrico: correlación de Spearman y Kendall, regresión robusta (lmrob).
-# En ambos casos: BIAS, PBIAS (%) y RMSE.
-# Sesgo: test sobre las diferencias pareadas (FLDAS - campo) con el mismo criterio:
-#   no paramétrico -> Wilcoxon de rangos con signo; paramétrico -> t pareado.
-#   Además, el sesgo por mes del año (BIAS, PBIAS y el test para cada mes).
+# En ambos casos: BIAS, PBIAS (%), RMSE y MAE (error absoluto medio).
+# Además, el sesgo por mes del año (BIAS y PBIAS de cada mes).
 # Salidas en output/validacion/:
 #   estaciones_<var>.png       dispersión FLDAS vs campo, un panel por estación
 #   analisis_regional_<var>.png  todas las estaciones juntas: a. dispersión
@@ -94,7 +92,7 @@ for (var in VARIABLES_CAMPO) {
                                              pendiente  = coef(res$ajuste)[2])
       tabla_estaciones[[length(tabla_estaciones) + 1]] <- res$tabla %>%
         mutate(estacion = est$nombre, variable = toupper(var), .before = 1)
-      tabla_sesgo_mes[[length(tabla_sesgo_mes) + 1]] <- sesgoPorMes(datos, metodo_est) %>%
+      tabla_sesgo_mes[[length(tabla_sesgo_mes) + 1]] <- sesgoPorMes(datos) %>%
         mutate(estacion = est$nombre, variable = toupper(var), .before = 1)
     }, error = function(e) cat("  ERROR", est$nombre, ":", conditionMessage(e), "\n"))
   }
@@ -127,7 +125,7 @@ for (var in VARIABLES_CAMPO) {
 
   # Si se excluyeron estaciones, el gráfico lleva otro nombre (ej. analisis_regional_et_sin_VM.png)
   sufijo <- if (length(excluidas) > 0) paste0("_sin_", paste(excluidas, collapse = "_")) else ""
-  sesgo_mes <- sesgoPorMes(datos_todas, metodo_gen)
+  sesgo_mes <- sesgoPorMes(datos_todas)
 
   # Una figura con los dos paneles: a. dispersión y b. sesgo por mes
   g_disp  <- graficarValidacion(datos_todas, res$ajuste,
@@ -137,8 +135,7 @@ for (var in VARIABLES_CAMPO) {
                                                    n_distinct(datos_todas$estacion), " estaciones)"))
   g_sesgo <- graficarSesgoMensual(sesgo_mes,
                                   titulo = "b. Sesgo por mes",
-                                  unidad = UNIDADES[[var]],
-                                  alfa   = ALFA_SHAPIRO)
+                                  unidad = UNIDADES[[var]])
   figura <- (g_disp | g_sesgo) +
     plot_layout(widths = c(1, 1.3)) +
     plot_annotation(title = paste(NOMBRE_REGIONAL, "-", toupper(var)),
@@ -167,11 +164,8 @@ nombres <- c(
   "τ Kendall" = "kendall", "p-valor (Ke)" = "ke_pvalor",
   "Pendiente" = "pendiente", "Intercepto" = "intercepto",
   "R²" = "r2", "R² ajustado (robusto)" = "r2_adj_rob",
-  "BIAS" = "bias", "PBIAS (%)" = "pbias_pct", "RMSE" = "rmse",
-  "Test diferencias" = "test_dif", "Estadístico (dif.)" = "est_dif",
-  "p-valor (dif.)" = "p_dif",
-  "Mes" = "mes", "Media campo" = "media_campo", "Media FLDAS" = "media_fldas",
-  "Test" = "test"
+  "BIAS" = "bias", "PBIAS (%)" = "pbias_pct", "RMSE" = "rmse", "MAE" = "mae",
+  "Mes" = "mes", "Media campo" = "media_campo", "Media FLDAS" = "media_fldas"
 )
 
 # Quita las columnas que quedaron vacías (las del método que no se usó)

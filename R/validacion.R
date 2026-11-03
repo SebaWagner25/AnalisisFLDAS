@@ -16,42 +16,20 @@ sonNormales <- function(datos, alfa) {
   all(!is.na(p) & p >= alfa)
 }
 
-# Test sobre las diferencias pareadas (FLDAS - campo, mes a mes):
-# ¿la diferencia es sistemática (sesgo significativo) o puede ser azar?
-#   "parametrico"    -> t de Student pareado      (H0: media de las diferencias = 0)
-#   "no parametrico" -> Wilcoxon de rangos con signo (H0: diferencias centradas en 0)
-testDiferencias <- function(campo, fldas, metodo) {
-  if (sum(!is.na(campo - fldas)) < 3 || all(campo - fldas == 0, na.rm = TRUE)) {
-    return(list(nombre = NA_character_, estadistico = NA_real_, p = NA_real_))
-  }
-  if (metodo == "parametrico") {
-    t <- t.test(fldas, campo, paired = TRUE)
-    list(nombre = "t pareado", estadistico = unname(t$statistic), p = t$p.value)
-  } else {
-    w <- suppressWarnings(wilcox.test(fldas, campo, paired = TRUE, exact = FALSE))
-    list(nombre = "Wilcoxon", estadistico = unname(w$statistic), p = w$p.value)
-  }
-}
-
 # Sesgo por mes del año (enero ... diciembre).
 # datos: data.frame con fecha, valor_campo y valor_fldas
-sesgoPorMes <- function(datos, metodo) {
+sesgoPorMes <- function(datos) {
   datos %>%
     mutate(mes = month(fecha)) %>%
     group_by(mes) %>%
-    group_modify(function(d, ...) {
-      res_test <- testDiferencias(d$valor_campo, d$valor_fldas, metodo)
-      tibble(
-        n           = nrow(d),
-        media_campo = mean(d$valor_campo),
-        media_fldas = mean(d$valor_fldas),
-        bias        = mean(d$valor_fldas - d$valor_campo),
-        pbias_pct   = 100 * sum(d$valor_fldas - d$valor_campo) / sum(d$valor_campo),
-        test        = res_test$nombre,
-        p_dif       = res_test$p
-      )
-    }) %>%
-    ungroup() %>%
+    summarise(
+      n           = n(),
+      media_campo = mean(valor_campo),
+      media_fldas = mean(valor_fldas),
+      bias        = mean(valor_fldas - valor_campo),
+      pbias_pct   = 100 * sum(valor_fldas - valor_campo) / sum(valor_campo),
+      .groups = "drop"
+    ) %>%
     mutate(mes = factor(mes, levels = 1:12,
                         labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun",
                                    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")))
@@ -85,8 +63,6 @@ analizar <- function(datos, metodo = c("no parametrico", "parametrico")) {
     r2_adj_rob <- summary(ajuste)$adj.r.squared
   }
 
-  dif <- testDiferencias(campo, fldas, metodo)
-
   list(
     ajuste = ajuste,              # se usa para el gráfico
     tabla  = tibble(
@@ -107,29 +83,22 @@ analizar <- function(datos, metodo = c("no parametrico", "parametrico")) {
       bias       = mean(fldas - campo),
       pbias_pct  = 100 * sum(fldas - campo) / sum(campo),
       rmse       = sqrt(mean((fldas - campo)^2)),
-      test_dif   = dif$nombre,
-      est_dif    = dif$estadistico,
-      p_dif      = dif$p
+      mae        = mean(abs(fldas - campo))
     )
   )
 }
 
 # Gráfico del sesgo por mes (barras): positivo = FLDAS sobrestima.
-# Las barras con borde negro son meses con diferencia significativa (p < alfa).
 # archivo = NULL: no lo guarda (sirve para armar una figura con varios paneles).
-graficarSesgoMensual <- function(sesgo_mes, titulo, unidad, archivo = NULL, alfa = 0.05) {
+graficarSesgoMensual <- function(sesgo_mes, titulo, unidad, archivo = NULL) {
   sesgo_mes <- sesgo_mes %>%
-    mutate(signo = ifelse(bias >= 0, "FLDAS sobrestima", "FLDAS subestima"),
-           significativo = !is.na(p_dif) & p_dif < alfa)
+    mutate(signo = ifelse(bias >= 0, "FLDAS sobrestima", "FLDAS subestima"))
 
   p <- ggplot(sesgo_mes, aes(x = mes, y = bias, fill = signo)) +
-    geom_col(aes(color = significativo), linewidth = 0.8, width = 0.75) +
+    geom_col(width = 0.75) +
     geom_hline(yintercept = 0, color = "gray30") +
     scale_fill_manual(values = c("FLDAS sobrestima" = "#B22222",
                                  "FLDAS subestima"  = "#1B2A49"), name = NULL) +
-    scale_color_manual(values = c("TRUE" = "black", "FALSE" = "transparent"),
-                       labels = c("TRUE" = paste0("p < ", alfa)), breaks = "TRUE",
-                       name = NULL) +
     labs(title = titulo, x = NULL, y = paste0("BIAS (", unidad, ")"),
          caption = "BIAS = media(FLDAS - campo)") +
     theme_light(base_size = 12) +

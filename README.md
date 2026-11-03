@@ -118,10 +118,11 @@ Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
   regresión robusta). Si todas son normales, con el **paramétrico** (Pearson, regresión lineal, R²).
 - **Análisis regional:** la misma regla sobre los datos de todas las estaciones juntas.
 - El resultado del test de cada estación queda en la hoja "Normalidad" de `output/validacion/validacion.xlsx`.
-- **Sesgo:** test sobre las diferencias pareadas (FLDAS − campo) con el mismo criterio
-  (Wilcoxon de rangos con signo si es no paramétrico, t pareado si es paramétrico),
-  para toda la serie y para cada mes del año (hoja "Sesgo por mes" de `validacion.xlsx`
-  y panel b. de `output/validacion/analisis_regional_<var>.png`, junto a la dispersión en el panel a.).
+- **Error:** con los dos métodos se calculan RMSE y MAE (error absoluto medio; se infla menos
+  que el RMSE con los meses de error muy grande).
+- **Sesgo:** BIAS y PBIAS para toda la serie y para cada mes del año (hoja "Sesgo por mes"
+  de `validacion.xlsx` y panel b. de `output/validacion/analisis_regional_<var>.png`,
+  junto a la dispersión en el panel a.).
 
 ### Paso 4: evaluación indirecta de la humedad de suelo
 No hay mediciones de humedad de suelo en campo (las del SNIH están fuera del área de estudio).
