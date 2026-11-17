@@ -37,7 +37,7 @@ pip install xarray rioxarray pandas numpy netcdf4 matplotlib cartopy
 
 ```
 R/                  funciones (no se corren solas; las cargan los scripts)
-  config.R            parámetros del proyecto (umbral de faltantes, estaciones excluidas...)
+  config.R            parámetros del proyecto (umbral de faltantes, estaciones excluidas, etc.)
   controlCalidad.R    control de calidad de los datos diarios de campo
   agregarMensual.R    pasa datos diarios a mensuales y calcula % de días faltantes
   outliers.R          marca outliers con el test de Tukey
@@ -48,15 +48,15 @@ R/                  funciones (no se corren solas; las cargan los scripts)
   convertirUnidades.R conversión de unidades de FLDAS
   estadisticaDescriptiva.R
   validacion.R        estadísticos y gráficos de validación
-  evaluacionHS.R      SPI-1 y SSMI (paquete SPEI), correlación por mes y gráficos del paso 4
+  evaluacionHS.R      SPI-1 y SSMI, correlación por mes y gráficos del paso 4
   escribirExcel.R     guarda varias tablas en un Excel (una hoja por tabla)
   applyBeast.R        BEAST por píxel y gráficos
 scripts/            análisis, se corren en orden (ver abajo)
   otros/              análisis complementarios que no forman parte del informe
 python/             conversión .tif -> NetCDF y mapas con isolíneas
 cdo/                procesamiento de los NetCDF con CDO (isolíneas)
-data/               datos (no se suben a GitHub, salvo estaciones.csv)
-output/             resultados (no se suben a GitHub)
+data/               datos  
+output/             resultados 
 ```
 
 ## Datos usados
