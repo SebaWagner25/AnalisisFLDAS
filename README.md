@@ -91,9 +91,8 @@ Abrir `00_ANALISIS.Rproj` en RStudio y correr los scripts en orden desde la raí
 | 3 | `scripts/03_validacion.R` | Validación FLDAS vs campo, por estación y regional | `output/validacion/` (figuras por variable y `validacion.xlsx`) |
 | 4 | `scripts/04_evaluacion_HS.R` | Evaluación indirecta de la humedad de suelo de FLDAS: SSMI vs SPI de las estaciones (0-10 cm y 0-100 cm) | `output/evaluacion_hs/` (figuras y `evaluacion_hs.xlsx`) |
 | 5 | `scripts/05_mapas_descriptivos.R` + `python/` + `cdo/` | Mapas descriptivos e isolíneas | `output/mapas/`, `data/nc/` |
-| 6 | `scripts/06_beast.R` | Tendencias y cambios abruptos con BEAST (probablemente pase a otro proyecto) | `output/beast/` |
+| 6 | `scripts/06_beast.R` | Tendencias y cambios abruptos con BEAST (en proceso) | `output/beast/` |
 
-No se hizo corrección de sesgo: la validación del paso 3 indicó que no hacía falta.
 
 ### Paso 1: criterios de preprocesamiento
 - Códigos SMN: `S/P` (sin precipitación) y `<0.1` (traza) se toman como 0 mm; `S/D` (sin dato) como faltante.
@@ -113,9 +112,7 @@ No se hizo corrección de sesgo: la validación del paso 3 indicó que no hacía
 
 ### Pasos 2 y 3: análisis regional
 El análisis regional (todas las estaciones juntas) del descriptivo y de la validación deja afuera
-las mismas estaciones: las de `EXCLUIR_GENERAL` en `R/config.R` (p. ej., VM en ET por su píxel
-urbano y OX1 en temperatura de suelo por la falla del sensor). Esas estaciones siguen en los
-análisis por estación. Los archivos regionales llevan el sufijo `_sin_<id>`.
+las mismas estaciones: las de `EXCLUIR_GENERAL` en `R/config.R` (p. ej., VM en ET y OX1 en temperatura de suelo). Esas estaciones siguen en los análisis por estación. Los archivos regionales llevan el sufijo `_sin_<id>`.
 
 ### Paso 3: elección del método de validación
 Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
@@ -124,14 +121,13 @@ Según el test de Shapiro-Wilk (nivel `ALFA_SHAPIRO` en `R/config.R`, 0,05):
   regresión robusta). Si todas son normales, con el **paramétrico** (Pearson, regresión lineal, R²).
 - **Análisis regional:** la misma regla sobre los datos de todas las estaciones juntas.
 - El resultado del test de cada estación queda en la hoja "Normalidad" de `output/validacion/validacion.xlsx`.
-- **Error:** con los dos métodos se calculan RMSE y MAE (error absoluto medio; se infla menos
-  que el RMSE con los meses de error muy grande).
+- **Error:** con los dos métodos se calculan RMSE y MAE (error absoluto medio).
 - **Sesgo:** BIAS y PBIAS para toda la serie y para cada mes del año (hoja "Sesgo por mes"
   de `validacion.xlsx` y panel b. de `output/validacion/analisis_regional_<var>.png`,
   junto a la dispersión en el panel a.).
 
 ### Paso 4: evaluación indirecta de la humedad de suelo
-No hay mediciones de humedad de suelo en campo (las del SNIH están fuera del área de estudio).
+No hay mediciones de humedad de suelo en campo.
 Se compara un índice estandarizado de humedad de suelo (SSMI) de FLDAS con el índice estandarizado
 de precipitación (SPI) de las estaciones. La precipitación de FLDAS no se vuelve a evaluar: ya se
 validó en el paso 3. Primero se grafica la humedad de FLDAS de las 4 capas en el tiempo, en el
@@ -143,13 +139,12 @@ profundidad. Después, dos análisis:
   es la suma (en mm) de las capas 0-10, 10-40 y 40-100 cm, las mismas del modelo Noah que usa ese
   trabajo. A las dos series se les quita la tendencia lineal antes de correlacionar. La curva de
   sensibilidad (correlación según la escala del SPI) define la escala de análisis: la de máxima
-  correlación regional (`ESCALAS_SPI` en `R/config.R`). Spennemann eligió SPI-3 por criterio
-  agronómico para una región húmeda; acá la escala se elige con los datos.
+  correlación regional (`ESCALAS_SPI` en `R/config.R`).
 
 Criterios comunes:
 - **Estaciones:** `ESTACIONES_HS` en `R/config.R` (SL, VR y SR): las que tienen al menos
   ~20 años de precipitación en común con FLDAS. TL y las OMIXOM tienen 10 años o menos.
-  VM no se usa: FLDAS trata su píxel como urbano y su humedad de suelo no responde a la lluvia
+  VM no se usa: la humedad de suelo de FLDAS no responde a la lluvia
   como en el resto (la correlación con el perfil de 0-100 cm baja al aumentar la escala del SPI).
 - **Período:** todos los meses de cada estación en común con FLDAS (los de `series.csv`).
   El SPI y el SSMI de una estación se calculan sobre los mismos meses.
@@ -164,7 +159,7 @@ Criterios comunes:
   Shapiro-Wilk que el paso 3: Pearson si es paramétrico; Spearman y Kendall si no. No se usan recta
   ajustada, RMSE ni BIAS, porque suponen que los dos índices deberían valer lo mismo y miden cosas
   distintas (anomalía de lluvia y de humedad de suelo).
-- **Gráficos:** los de los trabajos de referencia, no dispersión con recta 1:1:
+- **Gráficos:**
   - `series_hs.png` (A): SPI-1 y SSMI 0-10 cm en el tiempo, por estación (Fig. 6 de Spennemann et al., 2015).
   - `correlacion_mensual_hs.png` (A): correlación por mes, promedio ± desvío entre estaciones, sin las
     de `EXCLUIR_GENERAL$hs` (como la Fig. 5 de Jung et al., 2020).
